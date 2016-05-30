@@ -53,7 +53,7 @@ public:
 		unsigned char		netmask_ip[4];
 		unsigned char		gateway_ip[4];
 		unsigned char		flag;
-		unsigned char		interface_info[6];
+		CString				interface_info;
 		unsigned char		metric;
 	}STATIC_IP_ROUTING_RECORD, *PSTATIC_IP_ROUTING_RECORD;
 	
