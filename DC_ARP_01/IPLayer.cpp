@@ -71,7 +71,28 @@ BOOL CIPLayer::Receive(unsigned char* ppayload)
 	PIPLayer_HEADER pFrame = (PIPLayer_HEADER) ppayload ;
 	
 	BOOL bSuccess = FALSE ;
+	
+	// This machine is not a router, just host
+	if(routingTable.size() == 0)
+	{
+		bSuccess = mp_aUpperLayer[0]->Receive((unsigned char*)pFrame->ip_data);
+		return bSuccess ;
+	}
+	else
+	{
+		list<STATIC_IP_ROUTING_RECORD>::iterator iter = routingTable.begin();
+		for(; iter != routingTable.end(); iter++)
+		{
+			unsigned char isFlagUp = (*iter).flag & FLAG_UP;
+			unsigned char isFlagGateway = (*iter).flag & FLAG_GATEWAY;
 
-	bSuccess = mp_aUpperLayer[0]->Receive((unsigned char*)pFrame->ip_data);
-	return bSuccess ;
+			if( isFlagUp && isFlagGateway)
+			{
+				
+				bSuccess = mp_UnderLayer->Send((unsigned char*)&m_sHeader,sizeof(ppayload)+IP_HEADER_SIZE);
+
+				
+			}
+		}
+	}
 }

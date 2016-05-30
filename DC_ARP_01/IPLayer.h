@@ -7,6 +7,13 @@
 #endif // _MSC_VER > 1000
 
 #include "BaseLayer.h"
+#include <list>
+
+#define FLAG_UP				1
+#define FLAG_GATEWAY		(1 << 1)
+#define FLAG_HOST_SPECIFIT	(1 << 2)
+#define FLAG_D				(1 << 3)
+#define FLAG_M				(1 << 4)
 
 class CIPLayer 
 : public CBaseLayer  
@@ -41,8 +48,18 @@ public:
 		
 	} IPLayer_HEADER, *PIPLayer_HEADER ;
 
+	typedef struct _STATIC_IP_ROUTING_RECORD{
+		unsigned char		destination_ip[4];
+		unsigned char		netmask_ip[4];
+		unsigned char		gateway_ip[4];
+		unsigned char		flag;
+		unsigned char		interface_info[6];
+		unsigned char		metric;
+	}STATIC_IP_ROUTING_RECORD, *PSTATIC_IP_ROUTING_RECORD;
+	
 protected:
-	IPLayer_HEADER	m_sHeader ;
+	IPLayer_HEADER					m_sHeader ;
+	list<STATIC_IP_ROUTING_RECORD>	routingTable;
 };
 
 
