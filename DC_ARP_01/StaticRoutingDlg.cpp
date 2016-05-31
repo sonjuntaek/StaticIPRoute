@@ -109,7 +109,6 @@ void CStaticRoutingDlg::OnIpnFieldchangedStaticRouteDstIp(NMHDR *pNMHDR, LRESULT
 	int firstByteVerified = VERIFY_BYTE(dstIPAddress[0]);
 	int secondByteVerified = VERIFY_BYTE(dstIPAddress[1]);
 	int thirdByteVerified = VERIFY_BYTE(dstIPAddress[2]);
-	int fourthByteVerified = VERIFY_BYTE(dstIPAddress[3]);
 
 	if ((firstByteVerified > 0)  && (secondByteVerified > 0) && (thirdByteVerified > 0))
 	{
