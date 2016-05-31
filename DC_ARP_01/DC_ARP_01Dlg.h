@@ -26,6 +26,7 @@ public:
 	CComboBox			m_ComboEnetName;
 	CEdit				m_unGratuitousAddresss;
 	CListBox			m_proxyARPEntry;
+	CListCtrl			m_staticIPTable;
 	CString				m_unGratuitousAddressstest;
 	CString				m_unSrcEnetAddr;
 	CString				m_unDstEnetAddr;
@@ -62,7 +63,6 @@ public:
 	afx_msg void OnBnClickedArpItemDeleteButton();
 	afx_msg void OnBnClickedArpAllDeleteButton();
 	afx_msg void OnBnClickedWindowOkButton();
-	afx_msg void OnBnClickedGratuitousSendButton();
 	afx_msg void CDC_ARP_01Dlg::OnBnClickedProxyAddButton();
 	afx_msg void CDC_ARP_01Dlg::OnBnClickedProxyDeleteButton();
 	CString getCompleteString(BOOL isComplete);
@@ -105,4 +105,5 @@ public:
 	afx_msg void OnBnClickedWindowCloseButton();
 	afx_msg void OnBnClickedRoutingAddButton();
 	afx_msg void OnBnClickedRoutingDeleteButton();
+	afx_msg void OnBnClickedStaticRouteDeleteButton();
 };

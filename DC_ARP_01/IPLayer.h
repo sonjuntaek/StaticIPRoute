@@ -9,11 +9,16 @@
 #include "BaseLayer.h"
 #include <list>
 
-#define FLAG_UP				1
-#define FLAG_GATEWAY		(1 << 1)
+#define FLAG_UP				(1 << 4)
+#define FLAG_GATEWAY		(1 << 3)
 #define FLAG_HOST_SPECIFIT	(1 << 2)
-#define FLAG_D				(1 << 3)
-#define FLAG_M				(1 << 4)
+#define FLAG_D				(1 << 1)
+#define FLAG_M				1
+#define IS_FLAG_UP(X)		(((X) & (FLAG_UP)) >> 4)
+#define IS_FLAG_GATEWAY(X)	(((X) & (FLAG_GATEWAY)) >> 3)
+#define IS_FLAG_HOST(X)		(((X) & (FLAG_HOST_SPECIFIT)) >> 2)
+#define IS_FLAG_D(X)		(((X) & (FLAG_D)) >> 1)
+#define IS_FLAG_M(X)		(((X) & (FLAG_M)))
 
 class CIPLayer 
 : public CBaseLayer  
@@ -53,13 +58,14 @@ public:
 		unsigned char		netmask_ip[4];
 		unsigned char		gateway_ip[4];
 		unsigned char		flag;
+		CString				flag_string;
 		CString				interface_info;
-		unsigned char		metric;
+		CString				metric;
 	}STATIC_IP_ROUTING_RECORD, *PSTATIC_IP_ROUTING_RECORD;
+	list<STATIC_IP_ROUTING_RECORD>	routingTable;
 	
 protected:
 	IPLayer_HEADER					m_sHeader ;
-	list<STATIC_IP_ROUTING_RECORD>	routingTable;
 };
 
 

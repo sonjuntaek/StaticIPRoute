@@ -15,8 +15,8 @@
 #include <pcap.h>
 #include <Packet32.h>
 
-#define COMPLETE_DELETE_TIME 20
-#define INCOMPLETE_DELETE_TIME 3
+#define COMPLETE_DELETE_TIME 40
+#define INCOMPLETE_DELETE_TIME 10
 
 class CARPLayer : public CBaseLayer
 {

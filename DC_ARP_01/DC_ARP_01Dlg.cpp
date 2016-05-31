@@ -7,7 +7,9 @@
 #include "DC_ARP_01Dlg.h"
 #include "afxdialogex.h"
 #include "ARPLayer.h"
+#include "IPLayer.h"
 #include "proxyDlg.h"
+#include "StaticRoutingDlg.h"
 
 #ifdef _DEBUG
 #define new DEBUG_NEW
@@ -84,6 +86,7 @@ void CDC_ARP_01Dlg::DoDataExchange(CDataExchange* pDX)
 	DDX_Control(pDX, IDC_GRATUITOUS_ADDRESS_BOX, m_unGratuitousAddresss);
 	DDX_Control(pDX, IDC_PROXY_ARP_ENTRY_LIST, m_proxyARPEntry);
 	DDX_Text(pDX, IDC_GRATUITOUS_ADDRESS_BOX, m_unGratuitousAddressstes);
+	DDX_Control(pDX, IDC_STATIC_ROUTING_TABLE, m_staticIPTable);
 }
 
 BEGIN_MESSAGE_MAP(CDC_ARP_01Dlg, CDialogEx)
@@ -96,7 +99,6 @@ BEGIN_MESSAGE_MAP(CDC_ARP_01Dlg, CDialogEx)
 	ON_BN_CLICKED(IDC_ARP_SEND_BUTTON, OnSendMessage)
 	ON_BN_CLICKED(IDC_WINDOW_OK_BUTTON, &CDC_ARP_01Dlg::OnBnClickedWindowOkButton)
 	ON_BN_CLICKED(IDC_ARP_SETTING_BUTTON, OnButtonAddrSet)
-	ON_BN_CLICKED(IDC_GRATUITOUS_SEND_BUTTON, &CDC_ARP_01Dlg::OnBnClickedGratuitousSendButton)
 	ON_CBN_SELCHANGE(IDC_NICARD_COMBO, OnComboEnetAddr)
 
 	ON_WM_TIMER()
@@ -134,6 +136,21 @@ BOOL CDC_ARP_01Dlg::OnInitDialog()
 			pSysMenu->AppendMenu(MF_STRING, IDM_ABOUTBOX, strAboutMenu);
 		}
 	}
+
+	m_staticIPTable.SetExtendedStyle(LVS_EX_FULLROWSELECT);
+	char* columnText[7] = {"", "Destination", "Netmask", "Gateway", "Flag", "Interface", "Metric"};
+	int tabWidth[7] = {1,120,120,120,50,90,45};
+	LV_COLUMN levCol;
+
+	levCol.mask = LVCF_FMT|LVCF_SUBITEM|LVCF_TEXT|LVCF_WIDTH;
+	levCol.fmt = LVCFMT_CENTER;
+	for(int i=0; i<7; i++){
+
+		levCol.pszText=columnText[i];  //칼럼의 제목을 지정
+		levCol.iSubItem=i;  //서브아이템의 인덱스를 지정
+		levCol.cx=tabWidth[i];  //칼럼의 넓이를 지정
+		m_staticIPTable.InsertColumn(i,&levCol);  //LVCOLUMN구조체로 만들어진 값을 토대로 리스트 컨트롤에 칼럼을 삽입
+	}	
 
 	// 이 대화 상자의 아이콘을 설정합니다. 응용 프로그램의 주 창이 대화 상자가 아닐 경우에는
 	//  프레임워크가 이 작업을 자동으로 수행합니다.
@@ -315,7 +332,6 @@ void CDC_ARP_01Dlg::SetDlgState(int state) // 다이얼로그 초기화 부분
 	CButton*			pARPSendButton = (CButton*) GetDlgItem( IDC_ARP_SEND_BUTTON ) ;
 	CButton*			pProxyDeleteButton = (CButton*) GetDlgItem( IDC_PROXY_DELETE_BUTTON ) ;
 	CButton*			pProxyAddButton = (CButton*) GetDlgItem( IDC_PROXY_ADD_BUTTON  ) ;
-	CButton*			pGratuitousSendButton = (CButton*) GetDlgItem( IDC_GRATUITOUS_SEND_BUTTON ) ;
 	CButton*			pARPSettingButton = (CButton*) GetDlgItem( IDC_ARP_SETTING_BUTTON ) ;
 
 	CIPAddressCtrl*		pARPSendIP = (CIPAddressCtrl*) GetDlgItem( IDC_ARP_SEND_IP );
@@ -330,7 +346,6 @@ void CDC_ARP_01Dlg::SetDlgState(int state) // 다이얼로그 초기화 부분
 	case IPC_INITIALIZING : // 첫 화면 세팅
 		pWindowOkButton->EnableWindow( TRUE );
 		pARPSendButton->EnableWindow( FALSE );
-		pGratuitousSendButton->EnableWindow( TRUE );
 		pARPSettingButton->EnableWindow( TRUE );
 		pARPSendIP->EnableWindow( TRUE );
 		pOWNIPAddress->EnableWindow( TRUE );
@@ -341,7 +356,6 @@ void CDC_ARP_01Dlg::SetDlgState(int state) // 다이얼로그 초기화 부분
 
 	case IPC_READYTOSEND : // Send 버튼을 눌렀을 때 세팅
 		pARPSendButton->EnableWindow( TRUE );
-		pGratuitousSendButton->EnableWindow( TRUE );
 		pARPSettingButton->EnableWindow( TRUE );
 		pARPSendIP->EnableWindow( TRUE );
 		pOWNIPAddress->EnableWindow( TRUE );
@@ -547,18 +561,6 @@ void CDC_ARP_01Dlg::OnIpnFieldchangedOwnIpAddress(NMHDR *pNMHDR, LRESULT *pResul
 	*pResult = 0;
 }
 
-void CDC_ARP_01Dlg::OnBnClickedGratuitousSendButton() //gratuitous 버튼 눌렀을 때.
-{
-	UpdateData( TRUE ) ;
-	
-	SetTimer(1,3000,NULL);
-	
-	SendDataEditMac( ) ;
-	
-	UpdateData( FALSE ) ;
-	// TODO: 여기에 컨트롤 알림 처리기 코드를 추가합니다.
-}
-
 void CDC_ARP_01Dlg::SendDataEditMac(void) //맥주소 바꿔서 보내는 gratitous
 {
 	unsigned char src_mac[12];
@@ -668,10 +670,100 @@ void CDC_ARP_01Dlg::OnBnClickedWindowCloseButton()
 void CDC_ARP_01Dlg::OnBnClickedRoutingAddButton()
 {
 	// TODO: 여기에 컨트롤 알림 처리기 코드를 추가합니다.
+	CString recordtext;
+	CString recordipAddress;
+	// TODO:  여기에 컨트롤 알림 처리기 코드를 추가합니다.
+	CStaticRoutingDlg dlg(this);
+	int result = dlg.DoModal();
+	if(result == IDOK)
+	{
+		char szText[30] = "";
+		UpdateData(TRUE);
+
+		LVITEM levItem;
+
+		levItem.mask = LVIF_TEXT;
+		levItem.iItem = 0;
+		CIPLayer::STATIC_IP_ROUTING_RECORD newRecord;
+		
+		memcpy(newRecord.destination_ip,dlg.dstIPAddress,4);
+		memcpy(newRecord.netmask_ip,dlg.netmaskIPAddress,4);
+		memcpy(newRecord.gateway_ip,dlg.gatewayIPAddress,4);
+		newRecord.flag = dlg.flag;
+		newRecord.flag_string = dlg.flag_string;
+		newRecord.interface_info = dlg.interface_info;
+		newRecord.metric = dlg.metric;
+		
+		levItem.iSubItem = 0;
+		sprintf(szText,"%s"," ");
+		levItem.pszText=(LPSTR)szText;
+		m_staticIPTable.InsertItem(&levItem);
+		
+		levItem.iSubItem = 1;
+		recordipAddress.Format(" %3d.%3d.%3d.%3d  ", newRecord.destination_ip[0],newRecord.destination_ip[1],
+									newRecord.destination_ip[2],newRecord.destination_ip[3] );
+		sprintf(szText,"%s",recordipAddress);
+		levItem.pszText=(LPSTR)szText;
+		m_staticIPTable.SetItem(&levItem);
+		
+		levItem.iSubItem = 2;
+		recordipAddress.Format(" %3d.%3d.%3d.%3d  ", newRecord.netmask_ip[0],newRecord.netmask_ip[1],
+									newRecord.netmask_ip[2],newRecord.netmask_ip[3] );
+		sprintf(szText,"%s",recordipAddress);
+		levItem.pszText=(LPSTR)szText;
+		m_staticIPTable.SetItem(&levItem);
+		
+		levItem.iSubItem = 3;
+		if(IS_FLAG_GATEWAY(newRecord.flag))
+		{
+			recordipAddress.Format(" %3d.%3d.%3d.%3d  ", newRecord.gateway_ip[0],newRecord.gateway_ip[1],
+									newRecord.gateway_ip[2],newRecord.gateway_ip[3] );
+		}
+		else
+		{
+			recordipAddress.SetString("연결됨");
+		}
+		sprintf(szText,"%s",recordipAddress);
+		levItem.pszText=(LPSTR)szText;
+		m_staticIPTable.SetItem(&levItem);
+		
+		levItem.iSubItem = 4;
+		sprintf(szText,"%s",newRecord.flag_string);
+		levItem.pszText=(LPSTR)szText;
+		m_staticIPTable.SetItem(&levItem);
+		
+		levItem.iSubItem = 5;
+		sprintf(szText,"%s",newRecord.interface_info);
+		levItem.pszText=(LPSTR)szText;
+		m_staticIPTable.SetItem(&levItem);
+		
+		levItem.iSubItem = 6;
+		sprintf(szText,"%s",dlg.metric);
+		levItem.pszText=(LPSTR)szText;
+		m_staticIPTable.SetItem(&levItem);
+
+		m_IP->routingTable.push_back(newRecord);
+	}
 }
 
 
 void CDC_ARP_01Dlg::OnBnClickedRoutingDeleteButton()
 {
 	// TODO: 여기에 컨트롤 알림 처리기 코드를 추가합니다.
+	int i=0;
+	int index = m_staticIPTable.GetNextItem( -1, LVNI_SELECTED );
+	if(index != LB_ERR) {
+		list<CIPLayer::STATIC_IP_ROUTING_RECORD>::iterator cacheIter = m_IP->routingTable.begin();
+		for(cacheIter; cacheIter != m_IP->routingTable.end(); cacheIter++)
+		{
+			if(i == index){
+ 				cacheIter = m_IP->routingTable.erase(cacheIter);
+				break;
+			}
+			else
+				i++;
+		}
+		m_staticIPTable.DeleteItem(index);
+		m_proxyARPEntry.UpdateData(TRUE);
+	}
 }

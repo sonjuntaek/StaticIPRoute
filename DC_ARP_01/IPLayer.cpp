@@ -5,6 +5,7 @@
 #include "stdafx.h"
 #include "DC_ARP_01.h"
 #include "IPLayer.h"
+#include "ARPLayer.h"
 
 #ifdef _DEBUG
 #undef THIS_FILE
@@ -83,15 +84,25 @@ BOOL CIPLayer::Receive(unsigned char* ppayload)
 		list<STATIC_IP_ROUTING_RECORD>::iterator iter = routingTable.begin();
 		for(; iter != routingTable.end(); iter++)
 		{
-			unsigned char isFlagUp = (*iter).flag & FLAG_UP;
-			unsigned char isFlagGateway = (*iter).flag & FLAG_GATEWAY;
+			unsigned char isFlagUp = IS_FLAG_UP((*iter).flag);
+			unsigned char isFlagGateway = IS_FLAG_GATEWAY((*iter).flag);
 
-			if( isFlagUp && isFlagGateway)
+			if( isFlagUp && isFlagGateway )
 			{
-				
-				bSuccess = mp_UnderLayer->Send((unsigned char*)&m_sHeader,sizeof(ppayload)+IP_HEADER_SIZE);
+				((CARPLayer*)GetUnderLayer())->setTargetIPAddress((*iter).gateway_ip);
+				bSuccess = mp_UnderLayer->Send(ppayload,sizeof(ppayload));
 
+				if(bSuccess)
+				{
+					((CARPLayer*)GetUnderLayer())->setTargetIPAddress((*iter).destination_ip);
+					bSuccess = mp_UnderLayer->Send(ppayload,sizeof(ppayload));
+				}
 				
+			}
+			else if( isFlagUp )
+			{
+				((CARPLayer*)GetUnderLayer())->setTargetIPAddress((*iter).destination_ip);
+				bSuccess = mp_UnderLayer->Send(ppayload,sizeof(ppayload));
 			}
 		}
 	}

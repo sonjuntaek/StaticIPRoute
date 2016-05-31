@@ -17,6 +17,7 @@ public:
 
 protected:
 	virtual void DoDataExchange(CDataExchange* pDX);    // DDX/DDV 지원입니다.
+	virtual BOOL OnInitDialog();
 
 	DECLARE_MESSAGE_MAP()
 
@@ -32,11 +33,13 @@ public:
 
 	unsigned char		dstIPAddress[4];
 	unsigned char		netmaskIPAddress[4];
-	unsigned char		gatewayIPaddress[4];
+	unsigned char		gatewayIPAddress[4];
 	unsigned char		flag;
+	CString				flag_string;
 	CString				interface_info;
-	unsigned char		metric;
+	CString				metric;
 
 	afx_msg void OnBnClickedOk();
 	afx_msg void OnBnClickedCancel();
+	CEdit RouteMetric;
 };
