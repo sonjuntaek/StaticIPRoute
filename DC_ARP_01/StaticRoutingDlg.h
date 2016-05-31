@@ -2,6 +2,11 @@
 #include "afxwin.h"
 #include "afxcmn.h"
 
+#define VERIFIER			0xFF
+#define FULL_BYTE			0xFF
+
+#define VERIFY_BYTE(X)		((X) & (VERIFIER))
+
 // CStaticRoutingDlg 대화 상자입니다.
 
 class CStaticRoutingDlg : public CDialogEx
@@ -42,4 +47,5 @@ public:
 	afx_msg void OnBnClickedOk();
 	afx_msg void OnBnClickedCancel();
 	CEdit RouteMetric;
+	afx_msg void OnIpnFieldchangedStaticRouteDstIp(NMHDR *pNMHDR, LRESULT *pResult);
 };

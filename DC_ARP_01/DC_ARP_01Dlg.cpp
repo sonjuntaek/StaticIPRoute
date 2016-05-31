@@ -83,9 +83,9 @@ void CDC_ARP_01Dlg::DoDataExchange(CDataExchange* pDX)
 	DDX_Control(pDX, IDC_ARP_SEND_IP, m_unDstIPAddr);
 	DDX_Control(pDX, IDC_NICARD_COMBO, m_ComboEnetName);
 	DDX_Control(pDX, IDC_OWN_IP_ADDRESS, m_unSrcIPAddr);
-	DDX_Control(pDX, IDC_GRATUITOUS_ADDRESS_BOX, m_unGratuitousAddresss);
+	//DDX_Control(pDX, IDC_GRATUITOUS_ADDRESS_BOX, m_unGratuitousAddresss);
 	DDX_Control(pDX, IDC_PROXY_ARP_ENTRY_LIST, m_proxyARPEntry);
-	DDX_Text(pDX, IDC_GRATUITOUS_ADDRESS_BOX, m_unGratuitousAddressstes);
+	//DDX_Text(pDX, IDC_GRATUITOUS_ADDRESS_BOX, m_unGratuitousAddressstes);
 	DDX_Control(pDX, IDC_STATIC_ROUTING_TABLE, m_staticIPTable);
 }
 
@@ -102,7 +102,7 @@ BEGIN_MESSAGE_MAP(CDC_ARP_01Dlg, CDialogEx)
 	ON_CBN_SELCHANGE(IDC_NICARD_COMBO, OnComboEnetAddr)
 
 	ON_WM_TIMER()
-	ON_EN_CHANGE(IDC_GRATUITOUS_ADDRESS_BOX, &CDC_ARP_01Dlg::OnEnChangeGratuitousAddressBox)
+	//ON_EN_CHANGE(IDC_GRATUITOUS_ADDRESS_BOX, &CDC_ARP_01Dlg::OnEnChangeGratuitousAddressBox)
 	ON_BN_CLICKED(IDC_PROXY_ADD_BUTTON, &CDC_ARP_01Dlg::OnBnClickedProxyAddButton)
 	ON_BN_CLICKED(IDC_PROXY_DELETE_BUTTON, &CDC_ARP_01Dlg::OnBnClickedProxyDeleteButton)
 	ON_BN_CLICKED(IDC_WINDOW_CLOSE_BUTTON, &CDC_ARP_01Dlg::OnBnClickedWindowCloseButton)
@@ -139,7 +139,7 @@ BOOL CDC_ARP_01Dlg::OnInitDialog()
 
 	m_staticIPTable.SetExtendedStyle(LVS_EX_FULLROWSELECT);
 	char* columnText[7] = {"", "Destination", "Netmask", "Gateway", "Flag", "Interface", "Metric"};
-	int tabWidth[7] = {1,120,120,120,50,90,45};
+	int tabWidth[7] = {1,115,115,115,50,90,45};
 	LV_COLUMN levCol;
 
 	levCol.mask = LVCF_FMT|LVCF_SUBITEM|LVCF_TEXT|LVCF_WIDTH;
@@ -337,7 +337,7 @@ void CDC_ARP_01Dlg::SetDlgState(int state) // 다이얼로그 초기화 부분
 	CIPAddressCtrl*		pARPSendIP = (CIPAddressCtrl*) GetDlgItem( IDC_ARP_SEND_IP );
 	CIPAddressCtrl*		pOWNIPAddress = (CIPAddressCtrl*) GetDlgItem( IDC_OWN_IP_ADDRESS );
 
-	CEdit*				pGratuitousARPAddress = (CEdit*) GetDlgItem( IDC_GRATUITOUS_ADDRESS_BOX ) ;
+	//CEdit*				pGratuitousARPAddress = (CEdit*) GetDlgItem( IDC_GRATUITOUS_ADDRESS_BOX ) ;
 
 	CComboBox*			pEnetNameCombo = (CComboBox*)GetDlgItem( IDC_NICARD_COMBO );
 
@@ -349,7 +349,7 @@ void CDC_ARP_01Dlg::SetDlgState(int state) // 다이얼로그 초기화 부분
 		pARPSettingButton->EnableWindow( TRUE );
 		pARPSendIP->EnableWindow( TRUE );
 		pOWNIPAddress->EnableWindow( TRUE );
-		pGratuitousARPAddress->EnableWindow ( TRUE );
+		//pGratuitousARPAddress->EnableWindow ( TRUE );
 		m_proxyARPEntry.EnableWindow( FALSE );
 		m_ArpTable.EnableWindow( FALSE ) ;
 		break ;
@@ -359,7 +359,7 @@ void CDC_ARP_01Dlg::SetDlgState(int state) // 다이얼로그 초기화 부분
 		pARPSettingButton->EnableWindow( TRUE );
 		pARPSendIP->EnableWindow( TRUE );
 		pOWNIPAddress->EnableWindow( TRUE );
-		pGratuitousARPAddress->EnableWindow ( TRUE );
+		//pGratuitousARPAddress->EnableWindow ( TRUE );
 		m_proxyARPEntry.EnableWindow( TRUE );
 
 		DWORD dwIP;

@@ -39,6 +39,7 @@ void CStaticRoutingDlg::DoDataExchange(CDataExchange* pDX)
 BEGIN_MESSAGE_MAP(CStaticRoutingDlg, CDialogEx)
 	ON_BN_CLICKED(IDOK, &CStaticRoutingDlg::OnBnClickedOk)
 	ON_BN_CLICKED(IDCANCEL, &CStaticRoutingDlg::OnBnClickedCancel)
+	ON_NOTIFY(IPN_FIELDCHANGED, IDC_STATIC_ROUTE_DST_IP, &CStaticRoutingDlg::OnIpnFieldchangedStaticRouteDstIp)
 END_MESSAGE_MAP()
 
 
@@ -96,4 +97,32 @@ void CStaticRoutingDlg::OnBnClickedOk()
 void CStaticRoutingDlg::OnBnClickedCancel()
 {
 	CDialogEx::OnCancel();
+}
+
+
+void CStaticRoutingDlg::OnIpnFieldchangedStaticRouteDstIp(NMHDR *pNMHDR, LRESULT *pResult)
+{
+	LPNMIPADDRESS pIPAddr = reinterpret_cast<LPNMIPADDRESS>(pNMHDR);
+
+	RouteDstIPAddress.GetAddress(dstIPAddress[0],dstIPAddress[1],dstIPAddress[2],dstIPAddress[3]);
+	
+	int firstByteVerified = VERIFY_BYTE(dstIPAddress[0]);
+	int secondByteVerified = VERIFY_BYTE(dstIPAddress[1]);
+	int thirdByteVerified = VERIFY_BYTE(dstIPAddress[2]);
+	int fourthByteVerified = VERIFY_BYTE(dstIPAddress[3]);
+
+	if ((firstByteVerified > 0)  && (secondByteVerified > 0) && (thirdByteVerified > 0))
+	{
+		RouteNetmaskIPAddress.SetAddress(FULL_BYTE, FULL_BYTE, FULL_BYTE, 0);
+	}
+	else if((firstByteVerified > 0)  && (secondByteVerified > 0))
+	{
+		RouteNetmaskIPAddress.SetAddress(FULL_BYTE, FULL_BYTE, 0, 0);
+	}
+	else if((firstByteVerified > 0))
+	{
+		RouteNetmaskIPAddress.SetAddress(FULL_BYTE, 0, 0, 0);
+	}
+
+	*pResult = 0;
 }

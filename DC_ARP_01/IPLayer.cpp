@@ -84,26 +84,37 @@ BOOL CIPLayer::Receive(unsigned char* ppayload)
 		list<STATIC_IP_ROUTING_RECORD>::iterator iter = routingTable.begin();
 		for(; iter != routingTable.end(); iter++)
 		{
-			unsigned char isFlagUp = IS_FLAG_UP((*iter).flag);
-			unsigned char isFlagGateway = IS_FLAG_GATEWAY((*iter).flag);
+			unsigned char maskedData[4];
+			maskedData[0] = (*iter).netmask_ip[0] & pFrame->ip_dst[0];
+			maskedData[1] = (*iter).netmask_ip[1] & pFrame->ip_dst[1];
+			maskedData[2] = (*iter).netmask_ip[2] & pFrame->ip_dst[2];
+			maskedData[3] = (*iter).netmask_ip[3] & pFrame->ip_dst[3];
 
-			if( isFlagUp && isFlagGateway )
+			if(memcmp((*iter).destination_ip, maskedData, 4) == 0)
 			{
-				((CARPLayer*)GetUnderLayer())->setTargetIPAddress((*iter).gateway_ip);
-				bSuccess = mp_UnderLayer->Send(ppayload,sizeof(ppayload));
+				unsigned char isFlagUp = IS_FLAG_UP((*iter).flag);
+				unsigned char isFlagGateway = IS_FLAG_GATEWAY((*iter).flag);
 
-				if(bSuccess)
+				if( isFlagUp && isFlagGateway )
+				{
+					((CARPLayer*)GetUnderLayer())->setTargetIPAddress((*iter).gateway_ip);
+					bSuccess = mp_UnderLayer->Send(ppayload,sizeof(ppayload));
+
+					if(bSuccess)
+					{
+						((CARPLayer*)GetUnderLayer())->setTargetIPAddress((*iter).destination_ip);
+						bSuccess = mp_UnderLayer->Send(ppayload,sizeof(ppayload));
+					}
+				
+				}
+				else if( isFlagUp )
 				{
 					((CARPLayer*)GetUnderLayer())->setTargetIPAddress((*iter).destination_ip);
 					bSuccess = mp_UnderLayer->Send(ppayload,sizeof(ppayload));
 				}
-				
-			}
-			else if( isFlagUp )
-			{
-				((CARPLayer*)GetUnderLayer())->setTargetIPAddress((*iter).destination_ip);
-				bSuccess = mp_UnderLayer->Send(ppayload,sizeof(ppayload));
+				break;
 			}
 		}
+		return bSuccess;
 	}
 }
