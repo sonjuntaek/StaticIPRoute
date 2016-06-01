@@ -109,18 +109,22 @@ void CStaticRoutingDlg::OnIpnFieldchangedStaticRouteDstIp(NMHDR *pNMHDR, LRESULT
 	int firstByteVerified = VERIFY_BYTE(dstIPAddress[0]);
 	int secondByteVerified = VERIFY_BYTE(dstIPAddress[1]);
 	int thirdByteVerified = VERIFY_BYTE(dstIPAddress[2]);
+	netmaskLength = 0;
 
 	if ((firstByteVerified > 0)  && (secondByteVerified > 0) && (thirdByteVerified > 0))
 	{
 		RouteNetmaskIPAddress.SetAddress(FULL_BYTE, FULL_BYTE, FULL_BYTE, 0);
+		netmaskLength = 3;
 	}
 	else if((firstByteVerified > 0)  && (secondByteVerified > 0))
 	{
 		RouteNetmaskIPAddress.SetAddress(FULL_BYTE, FULL_BYTE, 0, 0);
+		netmaskLength = 2;
 	}
 	else if((firstByteVerified > 0))
 	{
 		RouteNetmaskIPAddress.SetAddress(FULL_BYTE, 0, 0, 0);
+		netmaskLength = 1;
 	}
 
 	*pResult = 0;

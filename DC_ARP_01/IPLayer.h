@@ -58,10 +58,16 @@ public:
 		unsigned char		netmask_ip[4];
 		unsigned char		gateway_ip[4];
 		unsigned char		flag;
+		unsigned char		netmask_length;
 		CString				flag_string;
 		CString				interface_info;
 		CString				metric;
+
+		virtual bool operator < (const _STATIC_IP_ROUTING_RECORD& rhs) const {
+			return ( netmask_length > rhs.netmask_length );
+		}
 	}STATIC_IP_ROUTING_RECORD, *PSTATIC_IP_ROUTING_RECORD;
+
 	list<STATIC_IP_ROUTING_RECORD>	routingTable;
 	
 protected:

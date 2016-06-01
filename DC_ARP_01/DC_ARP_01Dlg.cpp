@@ -693,6 +693,7 @@ void CDC_ARP_01Dlg::OnBnClickedRoutingAddButton()
 		newRecord.flag_string = dlg.flag_string;
 		newRecord.interface_info = dlg.interface_info;
 		newRecord.metric = dlg.metric;
+		newRecord.netmask_length = dlg.netmaskLength;
 		
 		levItem.iSubItem = 0;
 		sprintf(szText,"%s"," ");
@@ -743,6 +744,7 @@ void CDC_ARP_01Dlg::OnBnClickedRoutingAddButton()
 		m_staticIPTable.SetItem(&levItem);
 
 		m_IP->routingTable.push_back(newRecord);
+		m_IP->routingTable.sort();
 	}
 }
 
@@ -754,14 +756,12 @@ void CDC_ARP_01Dlg::OnBnClickedRoutingDeleteButton()
 	int index = m_staticIPTable.GetNextItem( -1, LVNI_SELECTED );
 	if(index != LB_ERR) {
 		list<CIPLayer::STATIC_IP_ROUTING_RECORD>::iterator cacheIter = m_IP->routingTable.begin();
-		for(cacheIter; cacheIter != m_IP->routingTable.end(); cacheIter++)
+		for(cacheIter, i = 0; cacheIter != m_IP->routingTable.end(); cacheIter++, i++)
 		{
 			if(i == index){
  				cacheIter = m_IP->routingTable.erase(cacheIter);
 				break;
 			}
-			else
-				i++;
 		}
 		m_staticIPTable.DeleteItem(index);
 		m_proxyARPEntry.UpdateData(TRUE);

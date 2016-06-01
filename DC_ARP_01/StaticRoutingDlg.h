@@ -40,6 +40,7 @@ public:
 	unsigned char		netmaskIPAddress[4];
 	unsigned char		gatewayIPAddress[4];
 	unsigned char		flag;
+	unsigned char		netmaskLength;
 	CString				flag_string;
 	CString				interface_info;
 	CString				metric;
