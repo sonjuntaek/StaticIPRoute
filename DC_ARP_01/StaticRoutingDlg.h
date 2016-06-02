@@ -25,17 +25,20 @@ protected:
 	virtual BOOL OnInitDialog();
 
 	DECLARE_MESSAGE_MAP()
-
+	
 public:
 
 	CIPAddressCtrl		RouteDstIPAddress;
 	CIPAddressCtrl		RouteNetmaskIPAddress;
 	CIPAddressCtrl		RouteGatewayIPAddress;
+	CIPAddressCtrl		RouteSrcIPAddress;
 	CButton				RouteFlagUpCheck;
 	CButton				RouteFlagGatewayCheck;
 	CButton				RouteFlagHostCheck;
 	CComboBox			RouteInterfaceCombo;
-
+	unsigned char		selectedRow;
+	
+	unsigned char		srcIPAddress[4];
 	unsigned char		dstIPAddress[4];
 	unsigned char		netmaskIPAddress[4];
 	unsigned char		gatewayIPAddress[4];
@@ -45,8 +48,11 @@ public:
 	CString				interface_info;
 	CString				metric;
 
+	CString				srcMACAddress;
+
 	afx_msg void OnBnClickedOk();
 	afx_msg void OnBnClickedCancel();
 	CEdit RouteMetric;
 	afx_msg void OnIpnFieldchangedStaticRouteDstIp(NMHDR *pNMHDR, LRESULT *pResult);
+	void OnComboEnetAddr();
 };

@@ -55,6 +55,7 @@ public:
 
 	typedef struct _STATIC_IP_ROUTING_RECORD{
 		unsigned char		destination_ip[4];
+		unsigned char		own_ip[4];
 		unsigned char		netmask_ip[4];
 		unsigned char		gateway_ip[4];
 		unsigned char		flag;

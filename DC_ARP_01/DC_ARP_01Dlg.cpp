@@ -83,9 +83,7 @@ void CDC_ARP_01Dlg::DoDataExchange(CDataExchange* pDX)
 	DDX_Control(pDX, IDC_ARP_SEND_IP, m_unDstIPAddr);
 	DDX_Control(pDX, IDC_NICARD_COMBO, m_ComboEnetName);
 	DDX_Control(pDX, IDC_OWN_IP_ADDRESS, m_unSrcIPAddr);
-	//DDX_Control(pDX, IDC_GRATUITOUS_ADDRESS_BOX, m_unGratuitousAddresss);
 	DDX_Control(pDX, IDC_PROXY_ARP_ENTRY_LIST, m_proxyARPEntry);
-	//DDX_Text(pDX, IDC_GRATUITOUS_ADDRESS_BOX, m_unGratuitousAddressstes);
 	DDX_Control(pDX, IDC_STATIC_ROUTING_TABLE, m_staticIPTable);
 }
 
@@ -102,7 +100,6 @@ BEGIN_MESSAGE_MAP(CDC_ARP_01Dlg, CDialogEx)
 	ON_CBN_SELCHANGE(IDC_NICARD_COMBO, OnComboEnetAddr)
 
 	ON_WM_TIMER()
-	//ON_EN_CHANGE(IDC_GRATUITOUS_ADDRESS_BOX, &CDC_ARP_01Dlg::OnEnChangeGratuitousAddressBox)
 	ON_BN_CLICKED(IDC_PROXY_ADD_BUTTON, &CDC_ARP_01Dlg::OnBnClickedProxyAddButton)
 	ON_BN_CLICKED(IDC_PROXY_DELETE_BUTTON, &CDC_ARP_01Dlg::OnBnClickedProxyDeleteButton)
 	ON_BN_CLICKED(IDC_WINDOW_CLOSE_BUTTON, &CDC_ARP_01Dlg::OnBnClickedWindowCloseButton)
@@ -677,7 +674,7 @@ void CDC_ARP_01Dlg::OnBnClickedRoutingAddButton()
 	int result = dlg.DoModal();
 	if(result == IDOK)
 	{
-		char szText[30] = "";
+		char szText[50] = "";
 		UpdateData(TRUE);
 
 		LVITEM levItem;
@@ -689,12 +686,43 @@ void CDC_ARP_01Dlg::OnBnClickedRoutingAddButton()
 		memcpy(newRecord.destination_ip,dlg.dstIPAddress,4);
 		memcpy(newRecord.netmask_ip,dlg.netmaskIPAddress,4);
 		memcpy(newRecord.gateway_ip,dlg.gatewayIPAddress,4);
+		memcpy(newRecord.own_ip,dlg.srcIPAddress,4);
 		newRecord.flag = dlg.flag;
 		newRecord.flag_string = dlg.flag_string;
 		newRecord.interface_info = dlg.interface_info;
 		newRecord.metric = dlg.metric;
 		newRecord.netmask_length = dlg.netmaskLength;
 		
+		int nIndex = dlg.selectedRow;
+		BOOL isDeviceNotOpened = TRUE;
+		list<INTERFACE_STRUCT>::iterator iter = device_list.begin();
+		for(; iter != device_list.end(); iter++)
+		{
+			if((*iter).device_number == nIndex)
+			{
+				isDeviceNotOpened = FALSE;
+				break;
+			}
+		}
+		if(isDeviceNotOpened == TRUE)
+		{
+			m_NI->SetAdapterNumber(nIndex);
+			m_NI->PacketStartDriver();
+
+			INTERFACE_STRUCT newDevice;
+			unsigned char dst_mac[12];
+
+			memset(newDevice.device_ip, 0, 4);
+			memset(newDevice.device_mac, 0, 6);
+			memcpy(newDevice.device_ip, dlg.srcIPAddress, 4);
+			sscanf(dlg.srcMACAddress, "%02x%02x%02x%02x%02x%02x", &dst_mac[0],&dst_mac[1],&dst_mac[2],&dst_mac[3],&dst_mac[4],&dst_mac[5]);
+			memcpy(newDevice.device_mac, dst_mac, 6);
+			
+			newDevice.device_number = nIndex;
+			device_list.push_back(newDevice);
+		}
+		
+
 		levItem.iSubItem = 0;
 		sprintf(szText,"%s"," ");
 		levItem.pszText=(LPSTR)szText;

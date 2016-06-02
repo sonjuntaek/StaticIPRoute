@@ -3,6 +3,7 @@
 //
 
 #pragma once
+#include <list>
 #include "LayerManager.h"	// Added by ClassView
 #include "ApplicationLayer.h"	// Added by ClassView
 #include "EthernetLayer.h"	// Added by ClassView
@@ -37,13 +38,42 @@ public:
 	CString				m_stMessage;
 
 	unsigned char		porxyIPAddrString[4];
-
-	protected:
-	virtual void DoDataExchange(CDataExchange* pDX);	// DDX/DDV 지원입니다.
-
 	
+	typedef struct _INTERFACE_STRUCT
+	{
+		unsigned char		device_number;
+		unsigned char		device_ip[4];
+		unsigned char		device_mac[6];
+	}INTERFACE_STRUCT;
+
+	list<INTERFACE_STRUCT> device_list;
+
+	afx_msg void OnBnClickedArpItemDeleteButton();
+	afx_msg void OnBnClickedArpAllDeleteButton();
+	afx_msg void OnBnClickedWindowOkButton();
+	afx_msg void CDC_ARP_01Dlg::OnBnClickedProxyAddButton();
+	afx_msg void CDC_ARP_01Dlg::OnBnClickedProxyDeleteButton();
+	CString getCompleteString(BOOL isComplete);
+	CString getMACAddressString(unsigned char* macAddress);
+	
+	BOOL			Receive( unsigned char* ppayload );
+
+	inline void		SendData( );
+
+	afx_msg void OnIpnFieldchangedArpSendIp(NMHDR *pNMHDR, LRESULT *pResult);
+	afx_msg void OnIpnFieldchangedOwnIpAddress(NMHDR *pNMHDR, LRESULT *pResult);
+	void SendDataEditMac(void);
+	afx_msg void OnEnChangeGratuitousAddressBox();
+	CString m_unGratuitousAddressstes;
+	afx_msg void OnBnClickedWindowCloseButton();
+	afx_msg void OnBnClickedRoutingAddButton();
+	afx_msg void OnBnClickedRoutingDeleteButton();
+	afx_msg void OnBnClickedStaticRouteDeleteButton();
+
+	CNILayer*		m_NI;
 // 구현입니다.
 protected:
+	virtual void DoDataExchange(CDataExchange* pDX);	// DDX/DDV 지원입니다.
 	HICON m_hIcon;
 
 	// 생성된 메시지 맵 함수
@@ -59,19 +89,6 @@ protected:
 
 
 	DECLARE_MESSAGE_MAP()
-public:
-	afx_msg void OnBnClickedArpItemDeleteButton();
-	afx_msg void OnBnClickedArpAllDeleteButton();
-	afx_msg void OnBnClickedWindowOkButton();
-	afx_msg void CDC_ARP_01Dlg::OnBnClickedProxyAddButton();
-	afx_msg void CDC_ARP_01Dlg::OnBnClickedProxyDeleteButton();
-	CString getCompleteString(BOOL isComplete);
-	CString getMACAddressString(unsigned char* macAddress);
-	
-	BOOL			Receive( unsigned char* ppayload );
-
-	inline void		SendData( );
-
 private:
 	CLayerManager	m_LayerMgr;
 	
@@ -92,18 +109,8 @@ private:
 	CARPLayer*		m_ARP;
 	CIPLayer*		m_IP;
 	CEthernetLayer*	m_ETH;
-	CNILayer*		m_NI;
 
 	UINT			m_wParam;
 	DWORD			m_lParam;
 public:
-	afx_msg void OnIpnFieldchangedArpSendIp(NMHDR *pNMHDR, LRESULT *pResult);
-	afx_msg void OnIpnFieldchangedOwnIpAddress(NMHDR *pNMHDR, LRESULT *pResult);
-	void SendDataEditMac(void);
-	afx_msg void OnEnChangeGratuitousAddressBox();
-	CString m_unGratuitousAddressstes;
-	afx_msg void OnBnClickedWindowCloseButton();
-	afx_msg void OnBnClickedRoutingAddButton();
-	afx_msg void OnBnClickedRoutingDeleteButton();
-	afx_msg void OnBnClickedStaticRouteDeleteButton();
 };

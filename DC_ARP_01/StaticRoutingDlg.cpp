@@ -6,7 +6,7 @@
 #include "StaticRoutingDlg.h"
 #include "afxdialogex.h"
 #include "IPLayer.h"
-
+#include "DC_ARP_01Dlg.h"
 
 // CStaticRoutingDlg ´ëÈ­ »óÀÚÀÔ´Ï´Ù.
 
@@ -33,6 +33,7 @@ void CStaticRoutingDlg::DoDataExchange(CDataExchange* pDX)
 	DDX_Control(pDX, IDC_FLAG_HOST_CHECKBOX, RouteFlagHostCheck);
 	DDX_Control(pDX, IDC_STATIC_ROUTE_DEVICE, RouteInterfaceCombo);
 	DDX_Control(pDX, IDC_METRIC_EDIT_CONTROL, RouteMetric);
+	DDX_Control(pDX, IDC_STATIC_ROUTE_SOURCE_IP, RouteSrcIPAddress);
 }
 
 
@@ -40,6 +41,7 @@ BEGIN_MESSAGE_MAP(CStaticRoutingDlg, CDialogEx)
 	ON_BN_CLICKED(IDOK, &CStaticRoutingDlg::OnBnClickedOk)
 	ON_BN_CLICKED(IDCANCEL, &CStaticRoutingDlg::OnBnClickedCancel)
 	ON_NOTIFY(IPN_FIELDCHANGED, IDC_STATIC_ROUTE_DST_IP, &CStaticRoutingDlg::OnIpnFieldchangedStaticRouteDstIp)
+	ON_CBN_SELCHANGE(IDC_STATIC_ROUTE_DEVICE, OnComboEnetAddr)
 END_MESSAGE_MAP()
 
 
@@ -49,19 +51,61 @@ END_MESSAGE_MAP()
 BOOL CStaticRoutingDlg::OnInitDialog()
 {
 	CDialogEx::OnInitDialog();
-	this->RouteInterfaceCombo.AddString("interface");
+	CString device_description;
 
+	
+	for(int i = 0; i < NI_COUNT_NIC; i++){
+		if(!((CDC_ARP_01Dlg*)GetParent())->m_NI->GetAdapterObject(i))
+			break;
+		device_description = ((CDC_ARP_01Dlg*)GetParent())->m_NI->GetAdapterObject(i)->description;
+		device_description.Trim();
+		RouteInterfaceCombo.AddString(device_description);
+		RouteInterfaceCombo.SetCurSel(0);
+
+		PPACKET_OID_DATA OidData;
+		OidData = (PPACKET_OID_DATA)malloc(sizeof(PACKET_OID_DATA));
+		OidData->Oid = 0x01010101;
+		OidData->Length = 6;
+
+		LPADAPTER adapter = PacketOpenAdapter(((CDC_ARP_01Dlg*)GetParent())->m_NI->GetAdapterObject(0)->name);
+		PacketRequest(adapter, FALSE, OidData);
+
+		srcMACAddress.Format("%.2X%.2X%.2X%.2X%.2X%.2X",OidData->Data[0],OidData->Data[1],OidData->Data[2],OidData->Data[3],OidData->Data[4],OidData->Data[5]) ;
+	}
 	return TRUE;
 }
 
 
+void CStaticRoutingDlg::OnComboEnetAddr()
+{
+	UpdateData(TRUE);
+
+	int nIndex = RouteInterfaceCombo.GetCurSel();
+	((CDC_ARP_01Dlg*)GetParent())->m_NI->GetAdapterObject(nIndex)->name; //¹¹ °ñ¶ù´ÂÁö.
+
+	PPACKET_OID_DATA OidData; //°ø°£ÇÒ´ç
+	OidData = (PPACKET_OID_DATA)malloc(sizeof(PACKET_OID_DATA));
+	OidData->Oid = 0x01010101;
+	OidData->Length = 6;
+
+	LPADAPTER adapter = PacketOpenAdapter(((CDC_ARP_01Dlg*)GetParent())->m_NI->GetAdapterObject(nIndex)->name);
+	CString device_description = ((CDC_ARP_01Dlg*)GetParent())->m_NI->GetAdapterObject(nIndex)->description;
+	device_description.Trim();
+
+	PacketRequest(adapter, FALSE, OidData);
+
+	srcMACAddress.Format("%.2X%.2X%.2X%.2X%.2X%.2X",OidData->Data[0],OidData->Data[1],OidData->Data[2],OidData->Data[3],OidData->Data[4],OidData->Data[5]) ;
+
+	UpdateData(FALSE);
+}
 void CStaticRoutingDlg::OnBnClickedOk()
 {
 	UpdateData( TRUE );
 	RouteDstIPAddress.GetAddress(dstIPAddress[0],dstIPAddress[1],dstIPAddress[2],dstIPAddress[3]);
 	RouteNetmaskIPAddress.GetAddress(netmaskIPAddress[0],netmaskIPAddress[1],netmaskIPAddress[2],netmaskIPAddress[3]);
 	RouteGatewayIPAddress.GetAddress(gatewayIPAddress[0],gatewayIPAddress[1],gatewayIPAddress[2],gatewayIPAddress[3]);
-	
+	RouteSrcIPAddress.GetAddress(srcIPAddress[0],srcIPAddress[1],srcIPAddress[2],srcIPAddress[3]);
+
 	BOOL isUPChecked = IsDlgButtonChecked(IDC_FLAG_UP_CHECKBOX);
 	BOOL isGatewayChecked = IsDlgButtonChecked(IDC_FLAG_GATEWAY_CHECKBOX);
 	BOOL isHostChecked = IsDlgButtonChecked(IDC_FLAG_HOST_CHECKBOX);
@@ -86,7 +130,24 @@ void CStaticRoutingDlg::OnBnClickedOk()
 	}
 	else
 		flag_string.Append("  ");
+
+	int bit_mask = 0x1;
+	int additional_bit_mask = 8;
+	for(int i = 0; i < 8; i++)
+	{
+		if(bit_mask & dstIPAddress[3])
+		{
+			netmaskLength += additional_bit_mask;
+			break;
+		}
+		else
+		{
+			bit_mask << 1;
+			additional_bit_mask -= 1;
+		}
+	}
 	int n = RouteInterfaceCombo.GetCurSel();
+	selectedRow = n;
 	RouteInterfaceCombo.GetLBText(n,interface_info);
 	
 	GetDlgItem(IDC_METRIC_EDIT_CONTROL)->GetWindowTextA(metric);
@@ -114,17 +175,17 @@ void CStaticRoutingDlg::OnIpnFieldchangedStaticRouteDstIp(NMHDR *pNMHDR, LRESULT
 	if ((firstByteVerified > 0)  && (secondByteVerified > 0) && (thirdByteVerified > 0))
 	{
 		RouteNetmaskIPAddress.SetAddress(FULL_BYTE, FULL_BYTE, FULL_BYTE, 0);
-		netmaskLength = 3;
+		netmaskLength = 24;
 	}
 	else if((firstByteVerified > 0)  && (secondByteVerified > 0))
 	{
 		RouteNetmaskIPAddress.SetAddress(FULL_BYTE, FULL_BYTE, 0, 0);
-		netmaskLength = 2;
+		netmaskLength = 16;
 	}
 	else if((firstByteVerified > 0))
 	{
 		RouteNetmaskIPAddress.SetAddress(FULL_BYTE, 0, 0, 0);
-		netmaskLength = 1;
+		netmaskLength = 8;
 	}
 
 	*pResult = 0;
