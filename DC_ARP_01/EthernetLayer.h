@@ -28,6 +28,7 @@ public:
 
 	void			SetEnetDstAddress( unsigned char* pAddress );
 	void			SetEnetSrcAddress( unsigned char* pAddress );
+	void			SetEnetType( unsigned short	mtype );
 	unsigned char*	GetEnetDstAddress( );
 	unsigned char*	GetEnetSrcAddress( );
 

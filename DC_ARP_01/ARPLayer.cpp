@@ -100,6 +100,8 @@ BOOL CARPLayer::Send(unsigned char* ppayload, int length)
 		{	
 			setTargetHardwareAddress((*cacheIter).ethernetAddress);	//캐시에 있다면 mac 주소를 알게 된 것이므로, 이 mac 주소로 재설정.
 			((CEthernetLayer*)GetUnderLayer())->SetEnetDstAddress((*cacheIter).ethernetAddress);// ethernet layer의 mac 주소도 다시 설정.
+			((CEthernetLayer*)GetUnderLayer())->SetEnetType( 0x0008 ); //0x0800 //ARP로 보낼 필요 없으므로 IP로 타입 설정해줌 
+
 		}
 		else if(isGratuitousPacket == TRUE)
 		{
@@ -109,6 +111,8 @@ BOOL CARPLayer::Send(unsigned char* ppayload, int length)
 		{
 			memset(arpHeader.arpTargetHardwareAddress, 0, 6);
 			((CEthernetLayer*)GetUnderLayer())->SetEnetDstAddress(BROADCAST_ADDR);
+			((CEthernetLayer*)GetUnderLayer())->SetEnetType( 0x0608 ); //0x0806 ARP
+
 
 			ARP_CACHE_RECORD newRecord;
 			newRecord.arpInterface = this->adapter;
