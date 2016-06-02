@@ -74,7 +74,7 @@ BOOL CEthernetLayer::Receive( unsigned char* ppayload )
 	BOOL bSuccess = FALSE ;
 							// 받은 패킷의 시작지와 자신의 맥주소와 같으면 받지않는다.
 
-	list<INTERFACE_STRUCT>::iterator iter = device_list.begin();
+	list<CIPLayer::INTERFACE_STRUCT>::iterator iter = device_list.begin();
 	for(; iter != device_list.end(); iter++)
 	{
 

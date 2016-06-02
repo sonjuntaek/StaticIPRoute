@@ -59,13 +59,14 @@ public:
 	void setSenderHardwareAddress(unsigned char* senderHard);
 	void setTargetIPAddress(unsigned char* targetIP);
 	void setTargetHardwareAddress(unsigned char* targetHard);
+	void setEthernetHardwareAddress(unsigned char* macAddress);
 	void setAdapter(CString adapter);
 	list<ARP_CACHE_RECORD> getARPCacheTable(void);
 
 	BOOL Send(unsigned char* ppayload, int length);
 	BOOL Receive(unsigned char* ppayload);
 	
-
+	unsigned short next_ethernet_type;
 	list<ARP_CACHE_RECORD> arpCacheTable;
 	list<ARP_CACHE_RECORD> arpProxyTable;
 

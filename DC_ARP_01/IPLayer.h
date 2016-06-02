@@ -37,6 +37,7 @@ public:
 
 	BOOL Send(unsigned char* ppayload, int nlength);
 	BOOL Receive(unsigned char* ppayload);
+	void setProtocolStack(unsigned char* ipAddress, unsigned char* macAddress);
 
 	typedef struct _IPLayer_HEADER {
 		unsigned char ip_verlen;	// ip version		(1byte)
@@ -62,15 +63,25 @@ public:
 		unsigned char		netmask_length;
 		CString				flag_string;
 		CString				interface_info;
+		unsigned char		device_number;
 		CString				metric;
 
 		virtual bool operator < (const _STATIC_IP_ROUTING_RECORD& rhs) const {
 			return ( netmask_length > rhs.netmask_length );
 		}
 	}STATIC_IP_ROUTING_RECORD, *PSTATIC_IP_ROUTING_RECORD;
-
-	list<STATIC_IP_ROUTING_RECORD>	routingTable;
 	
+	typedef struct _INTERFACE_STRUCT
+	{
+		unsigned char		device_number;
+		unsigned char		device_ip[4];
+		unsigned char		device_mac[6];
+	}INTERFACE_STRUCT;
+	
+	list<STATIC_IP_ROUTING_RECORD>	routingTable;
+
+	list<INTERFACE_STRUCT> device_list;
+
 protected:
 	IPLayer_HEADER					m_sHeader ;
 };

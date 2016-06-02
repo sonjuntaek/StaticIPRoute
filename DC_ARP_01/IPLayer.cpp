@@ -72,7 +72,6 @@ BOOL CIPLayer::Receive(unsigned char* ppayload)
 	PIPLayer_HEADER pFrame = (PIPLayer_HEADER) ppayload ;
 	
 	BOOL bSuccess = FALSE ;
-	
 	// I am a host and this packet is mine
 	if(memcmp(pFrame->ip_dst, m_sHeader.ip_src, 4) == 0)
 	{
@@ -90,31 +89,59 @@ BOOL CIPLayer::Receive(unsigned char* ppayload)
 			maskedData[2] = (*iter).netmask_ip[2] & pFrame->ip_dst[2];
 			maskedData[3] = (*iter).netmask_ip[3] & pFrame->ip_dst[3];
 
+			//This record has same networkID with received packet's ip destination data.
 			if(memcmp((*iter).destination_ip, maskedData, 4) == 0)
 			{
+				list<INTERFACE_STRUCT>::iterator device_iter = device_list.begin();
+				for(;device_iter != device_list.end(); device_iter++)
+				{
+					if((*device_iter).device_number == (*iter).device_number)
+					{
+						setProtocolStack((*device_iter).device_ip, (*device_iter).device_mac);
+						break;
+					}
+				}
+
 				unsigned char isFlagUp = IS_FLAG_UP((*iter).flag);
 				unsigned char isFlagGateway = IS_FLAG_GATEWAY((*iter).flag);
 
 				if( isFlagUp && isFlagGateway )
 				{
+					((CARPLayer*)GetUnderLayer())->next_ethernet_type = ETHER_PROTO_TYPE_ARP;
 					((CARPLayer*)GetUnderLayer())->setTargetIPAddress((*iter).gateway_ip);
 					bSuccess = mp_UnderLayer->Send(ppayload,sizeof(ppayload));
 
 					if(bSuccess)
 					{
-						((CARPLayer*)GetUnderLayer())->setTargetIPAddress((*iter).destination_ip);
+						((CARPLayer*)GetUnderLayer())->next_ethernet_type = ETHER_PROTO_TYPE_IP;
+						((CARPLayer*)GetUnderLayer())->setTargetIPAddress(pFrame->ip_dst);
 						bSuccess = mp_UnderLayer->Send(ppayload,sizeof(ppayload));
 					}
 				
 				}
 				else if( isFlagUp )
 				{
-					((CARPLayer*)GetUnderLayer())->setTargetIPAddress((*iter).destination_ip);
+					((CARPLayer*)GetUnderLayer())->next_ethernet_type = ETHER_PROTO_TYPE_ARP;
+					((CARPLayer*)GetUnderLayer())->setTargetIPAddress(pFrame->ip_dst);
 					bSuccess = mp_UnderLayer->Send(ppayload,sizeof(ppayload));
+
+					if(bSuccess)
+					{
+						((CARPLayer*)GetUnderLayer())->next_ethernet_type = ETHER_PROTO_TYPE_IP;
+						((CARPLayer*)GetUnderLayer())->setTargetIPAddress(pFrame->ip_dst);
+						bSuccess = mp_UnderLayer->Send(ppayload,sizeof(ppayload));
+					}
 				}
 				break;
 			}
 		}
 		return bSuccess;
 	}
+}
+
+void CIPLayer::setProtocolStack(unsigned char* ipAddress, unsigned char* macAddress)
+{
+	((CARPLayer*)GetUnderLayer())->setSenderIPAddress(ipAddress);
+	((CARPLayer*)GetUnderLayer())->setSenderHardwareAddress(macAddress);
+	((CARPLayer*)GetUnderLayer())->setEthernetHardwareAddress(macAddress);
 }

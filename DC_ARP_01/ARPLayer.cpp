@@ -64,6 +64,11 @@ void CARPLayer::setTargetHardwareAddress(unsigned char* targetHard)
 	memcpy(arpHeader.arpTargetHardwareAddress, targetHard, 6);
 }
 
+void CARPLayer::setEthernetHardwareAddress(unsigned char* macAddress)
+{
+	((CEthernetLayer*)GetUnderLayer())->SetEnetSrcAddress(macAddress);
+}
+
 list<CARPLayer::ARP_CACHE_RECORD> CARPLayer::getARPCacheTable(void)
 {
 	return arpCacheTable;
@@ -99,6 +104,7 @@ BOOL CARPLayer::Send(unsigned char* ppayload, int length)
 		if((isCacheAvailable == TRUE) && ((*cacheIter).isComplete == TRUE))	// 캐시에 사용가능한 것이 존재한다면, 
 		{	
 			setTargetHardwareAddress((*cacheIter).ethernetAddress);	//캐시에 있다면 mac 주소를 알게 된 것이므로, 이 mac 주소로 재설정.
+			((CEthernetLayer*)GetUnderLayer())->m_sHeader.enet_type = next_ethernet_type;
 			((CEthernetLayer*)GetUnderLayer())->SetEnetDstAddress((*cacheIter).ethernetAddress);// ethernet layer의 mac 주소도 다시 설정.
 		}
 		else if(isGratuitousPacket == TRUE)
@@ -252,7 +258,7 @@ BOOL CARPLayer::Receive(unsigned char* ppayload)
 		((CEthernetLayer*)GetUnderLayer())->SetEnetSrcAddress(arpHeader.arpSenderHardwareAddress);
 		
 		//사실상 proxytable을 이용하는 경우에는 Receive를 하지 않고 send만 해주면 된다, 수정이 필요한 곳.
-		bSuccess = mp_aUpperLayer[0]->Receive((unsigned char*)pARPFrame->arpData); // 나한테 들어온 request 패킷을 상위계층으로 올려주는 것.
+		//bSuccess = mp_aUpperLayer[0]->Receive((unsigned char*)pARPFrame->arpData); // 나한테 들어온 request 패킷을 상위계층으로 올려주는 것.
 		bSuccess = mp_UnderLayer->Send((unsigned char*)&arpHeader, ARP_HEADER_SIZE);// 내가 reply를 해주어야 하는 작업을 처리하는 것.
 
 		

@@ -12,6 +12,7 @@
 #include <list>
 #include "BaseLayer.h"
 #include "ARPLayer.h"
+#include "IPLayer.h"
 
 class CEthernetLayer 
 : public CBaseLayer  
@@ -61,17 +62,8 @@ public:
 
 	} ETHERNET_HEADER, *PETHERNET_HEADER ;
 
-	typedef struct _INTERFACE_STRUCT
-	{
-		unsigned char		device_number;
-		unsigned char		device_ip[4];
-		unsigned char		device_mac[6];
-	}INTERFACE_STRUCT;
-
-	list<INTERFACE_STRUCT> device_list;
-
-
-protected:
+	list<CIPLayer::INTERFACE_STRUCT> device_list;
+	
 	ETHERNET_HEADER	m_sHeader ;
 };
 

@@ -40,7 +40,7 @@ public:
 
 	unsigned char		porxyIPAddrString[4];
 	
-	list<CEthernetLayer::INTERFACE_STRUCT> device_list;
+	list<CIPLayer::INTERFACE_STRUCT> device_list;
 
 	afx_msg void OnBnClickedArpItemDeleteButton();
 	afx_msg void OnBnClickedArpAllDeleteButton();
