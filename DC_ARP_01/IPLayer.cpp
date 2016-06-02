@@ -73,8 +73,8 @@ BOOL CIPLayer::Receive(unsigned char* ppayload)
 	
 	BOOL bSuccess = FALSE ;
 	
-	// This machine is not a router, just host
-	if(routingTable.size() == 0)
+	// I am a host and this packet is mine
+	if(memcmp(pFrame->ip_dst, m_sHeader.ip_src, 4) == 0)
 	{
 		bSuccess = mp_aUpperLayer[0]->Receive((unsigned char*)pFrame->ip_data);
 		return bSuccess ;

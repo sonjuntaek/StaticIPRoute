@@ -3,7 +3,6 @@
 //
 
 #pragma once
-#include <list>
 #include "LayerManager.h"	// Added by ClassView
 #include "ApplicationLayer.h"	// Added by ClassView
 #include "EthernetLayer.h"	// Added by ClassView
@@ -12,6 +11,8 @@
 #include "NILayer.h"		// Added by ClassView
 #include "afxwin.h"
 #include "afxcmn.h"
+#include "resource.h"
+#include <list>
 
 // CDC_ARP_01Dlg 대화 상자
 class CDC_ARP_01Dlg : public CDialogEx,
@@ -105,12 +106,11 @@ private:
 	inline void		SetRegstryMessage();
 	BOOL			m_bSendReady;
 
-	CApplicationLayer* m_APP;
-	CARPLayer*		m_ARP;
-	CIPLayer*		m_IP;
-	CEthernetLayer*	m_ETH;
+	CApplicationLayer*		m_APP;
+	CARPLayer*				m_ARP;
+	CIPLayer*				m_IP;
+	CEthernetLayer*			m_ETH;
 
 	UINT			m_wParam;
 	DWORD			m_lParam;
-public:
 };
