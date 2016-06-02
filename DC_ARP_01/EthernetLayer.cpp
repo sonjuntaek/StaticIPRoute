@@ -57,6 +57,12 @@ void CEthernetLayer::SetEnetDstAddress(unsigned char *pAddress)
 	memcpy( &m_sHeader.enet_dstaddr.addrs, pAddress, 6 ) ;
 }
 
+void CEthernetLayer::SetEnetType(unsigned short mtype)
+{
+	m_sHeader.enet_type = mtype ;
+}
+
+
 BOOL CEthernetLayer::Send(unsigned char *ppayload, int nlength)
 {
 	memcpy( m_sHeader.enet_data, ppayload, nlength ) ;
