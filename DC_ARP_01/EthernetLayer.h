@@ -11,6 +11,7 @@
 
 #include "BaseLayer.h"
 #include "ARPLayer.h"
+#include "DC_ARP_01Dlg.h"
 
 class CEthernetLayer 
 : public CBaseLayer  
@@ -29,6 +30,8 @@ public:
 	void			SetEnetSrcAddress( unsigned char* pAddress );
 	unsigned char*	GetEnetDstAddress( );
 	unsigned char*	GetEnetSrcAddress( );
+
+	list<CDC_ARP_01Dlg::INTERFACE_STRUCT> device_list;
 
 	CEthernetLayer( char* pName );
 	virtual ~CEthernetLayer();
