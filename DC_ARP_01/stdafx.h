@@ -58,9 +58,9 @@ using namespace std;
 								  sizeof(unsigned short))
 
 #define ETHER_MAX_DATA_SIZE		( ETHER_MAX_SIZE - ETHER_HEADER_SIZE )
-#define ETHER_PROTO_TYPE_IP		0x0008
-#define ETHER_PROTO_TYPE_ARP	0x0608
-#define ETHER_PROTO_TYPE_RARP	0x3508
+#define ETHER_PROTO_TYPE_IP		0x0800
+#define ETHER_PROTO_TYPE_ARP	0x0806
+#define ETHER_PROTO_TYPE_RARP	0x0835
 
 #define ARP_HEADER_SIZE			( sizeof(unsigned short) +	\
 								  sizeof(unsigned short) +	\
@@ -89,6 +89,7 @@ using namespace std;
 												          IP_HEADER_SIZE +		\
 												          ARP_HEADER_SIZE ) )
 
+#define TCP_PORT_CHAT	0x2024
 
 #define NI_COUNT_NIC	10
 
