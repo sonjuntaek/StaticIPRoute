@@ -40,14 +40,7 @@ public:
 
 	unsigned char		porxyIPAddrString[4];
 	
-	typedef struct _INTERFACE_STRUCT
-	{
-		unsigned char		device_number;
-		unsigned char		device_ip[4];
-		unsigned char		device_mac[6];
-	}INTERFACE_STRUCT;
-
-	list<INTERFACE_STRUCT> device_list;
+	list<CEthernetLayer::INTERFACE_STRUCT> device_list;
 
 	afx_msg void OnBnClickedArpItemDeleteButton();
 	afx_msg void OnBnClickedArpAllDeleteButton();

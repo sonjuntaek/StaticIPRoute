@@ -9,6 +9,7 @@
 #pragma once
 #endif // _MSC_VER > 1000
 
+#include <list>
 #include "BaseLayer.h"
 #include "ARPLayer.h"
 
@@ -29,8 +30,6 @@ public:
 	void			SetEnetSrcAddress( unsigned char* pAddress );
 	unsigned char*	GetEnetDstAddress( );
 	unsigned char*	GetEnetSrcAddress( );
-
-	//list<CDC_ARP_01Dlg::INTERFACE_STRUCT> device_list;
 
 	CEthernetLayer( char* pName );
 	virtual ~CEthernetLayer();
@@ -61,6 +60,16 @@ public:
 		unsigned char	enet_data[ ETHER_MAX_DATA_SIZE ] ; // frame data
 
 	} ETHERNET_HEADER, *PETHERNET_HEADER ;
+
+	typedef struct _INTERFACE_STRUCT
+	{
+		unsigned char		device_number;
+		unsigned char		device_ip[4];
+		unsigned char		device_mac[6];
+	}INTERFACE_STRUCT;
+
+	list<INTERFACE_STRUCT> device_list;
+
 
 protected:
 	ETHERNET_HEADER	m_sHeader ;

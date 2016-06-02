@@ -695,7 +695,7 @@ void CDC_ARP_01Dlg::OnBnClickedRoutingAddButton()
 		
 		int nIndex = dlg.selectedRow;
 		BOOL isDeviceNotOpened = TRUE;
-		list<INTERFACE_STRUCT>::iterator iter = device_list.begin();
+		list<CEthernetLayer::INTERFACE_STRUCT>::iterator iter = device_list.begin();
 		for(; iter != device_list.end(); iter++)
 		{
 			if((*iter).device_number == nIndex)
@@ -709,7 +709,7 @@ void CDC_ARP_01Dlg::OnBnClickedRoutingAddButton()
 			m_NI->SetAdapterNumber(nIndex);
 			m_NI->PacketStartDriver();
 
-			INTERFACE_STRUCT newDevice;
+			CEthernetLayer::INTERFACE_STRUCT newDevice;
 			unsigned char dst_mac[12];
 
 			memset(newDevice.device_ip, 0, 4);
@@ -772,6 +772,7 @@ void CDC_ARP_01Dlg::OnBnClickedRoutingAddButton()
 		m_staticIPTable.SetItem(&levItem);
 
 		m_IP->routingTable.push_back(newRecord);
+		m_ETH->device_list.assign(device_list.begin(), device_list.end());
 		m_IP->routingTable.sort();
 	}
 }

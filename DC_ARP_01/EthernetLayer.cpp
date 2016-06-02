@@ -74,11 +74,11 @@ BOOL CEthernetLayer::Receive( unsigned char* ppayload )
 	BOOL bSuccess = FALSE ;
 							// 받은 패킷의 시작지와 자신의 맥주소와 같으면 받지않는다.
 
-	//list<CDC_ARP_01Dlg::INTERFACE_STRUCT>::iterator iter = device_list.begin();
-	//for(; iter != device_list.end(); iter++)
-	//{
+	list<INTERFACE_STRUCT>::iterator iter = device_list.begin();
+	for(; iter != device_list.end(); iter++)
+	{
 
-	//}
+	}
 
 	if( memcmp((char *)pFrame->enet_srcaddr.S_un.s_ether_addr,(char *)m_sHeader.enet_srcaddr.S_un.s_ether_addr,6) != 0)
 	{						// 받은 패킷의 목적지와 자신의 맥주소와 같지 않고, 받은 패킷의 목적지 주소가 브로드캐스트이면 받음.
