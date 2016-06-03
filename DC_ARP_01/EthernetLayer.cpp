@@ -76,20 +76,30 @@ BOOL CEthernetLayer::Send(unsigned char *ppayload, int nlength)
 BOOL CEthernetLayer::Receive( unsigned char* ppayload )
 {
 	PETHERNET_HEADER pFrame = (PETHERNET_HEADER) ppayload ;
-
 	BOOL bSuccess = FALSE ;
 							// 받은 패킷의 시작지와 자신의 맥주소와 같으면 받지않는다.
 
+	BOOL belongMyNIC = FALSE;
 	list<CIPLayer::INTERFACE_STRUCT>::iterator iter = device_list.begin();
 	for(; iter != device_list.end(); iter++)
 	{
+		if(memcmp((*iter).device_mac, (char*)pFrame->enet_dstaddr.S_un.s_ether_addr,6) == 0){
+			belongMyNIC == TRUE;
 
+			PARP_HEADER pARPFrame = (PARP_HEADER)ppayload;
+
+			((CARPLayer*)GetUnderLayer())->setSenderIPAddress((*iter).device_ip);
+			((CARPLayer*)GetUnderLayer())->setSenderHardwareAddress((*iter).device_mac);
+			break;
+		}
 	}
-
+	//받은 패킷의 보내는 mac주소와 자신의 mac주소가 다르다면 들여보냄. 같으면 튕겨냄. 자기껄 자기가 안받아야되므로.
 	if( memcmp((char *)pFrame->enet_srcaddr.S_un.s_ether_addr,(char *)m_sHeader.enet_srcaddr.S_un.s_ether_addr,6) != 0)
-	{						// 받은 패킷의 목적지와 자신의 맥주소와 같지 않고, 받은 패킷의 목적지 주소가 브로드캐스트이면 받음.
+	{						
+		// 1.받은 패킷의 목적지 mac주소와 자신의 mac주소와 같거나
+		// 2.받은 패킷의 목적지 mac주소가 브로드캐스트이면 받음.
 		if ( memcmp((char *)pFrame->enet_dstaddr.S_un.s_ether_addr,(char *)m_sHeader.enet_srcaddr.S_un.s_ether_addr,6) == 0 ||
-			 memcmp((char *)pFrame->enet_dstaddr.S_un.s_ether_addr,BROADCAST_ADDR, 6) == 0)
+          memcmp((char *)pFrame->enet_dstaddr.S_un.s_ether_addr,BROADCAST_ADDR, 6) == 0)
 		{					//포트번호를 봄. 실질적으로 상관 x 
 			if(ntohs(pFrame->enet_type) == ntohs(ETHER_PROTO_TYPE_IP))
 			{

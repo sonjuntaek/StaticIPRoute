@@ -63,6 +63,20 @@ public:
 
 	} ETHERNET_HEADER, *PETHERNET_HEADER ;
 
+	typedef struct _ARP_HEADER
+	{
+		unsigned short arpHardwareType;
+		unsigned short arpProtocolType;
+		unsigned char arpHardwareAddrSize;
+		unsigned char arpProtocolAddrSize;
+		unsigned short arpOperationType;
+		unsigned char arpSenderHardwareAddress[6];
+		unsigned char arpSenderIPAddress[4];
+		unsigned char arpTargetHardwareAddress[6];
+		unsigned char arpTargetIPAddress[4];
+		unsigned char arpData[ARP_DATA_SIZE];
+
+	} ARP_HEADER, *PARP_HEADER;//∆˜¿Œ≈Õ.
 	list<CIPLayer::INTERFACE_STRUCT> device_list;
 	
 	ETHERNET_HEADER	m_sHeader ;
