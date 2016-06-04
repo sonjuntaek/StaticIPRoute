@@ -62,6 +62,7 @@ BOOL CIPLayer::Send(unsigned char* ppayload, int nlength)
 	memcpy( m_sHeader.ip_data, ppayload, nlength ) ;
 	
 	BOOL bSuccess = FALSE ;
+	m_sHeader.ip_tos = 0x0;
 	bSuccess = mp_UnderLayer->Send((unsigned char*)&m_sHeader,nlength+IP_HEADER_SIZE);
 
 	return bSuccess;
@@ -75,7 +76,20 @@ BOOL CIPLayer::Receive(unsigned char* ppayload)
 	// I am a host and this packet is mine
 	if(memcmp(pFrame->ip_dst, m_sHeader.ip_src, 4) == 0)
 	{
-		bSuccess = mp_aUpperLayer[0]->Receive((unsigned char*)pFrame->ip_data);
+		if(pFrame->ip_tos == 0x0)	//ping received
+		{
+			bSuccess = mp_aUpperLayer[0]->Receive((unsigned char*)pFrame->ip_data);
+			pFrame->ip_tos = 0x1;
+			unsigned char temp[4];
+			memcpy(temp, pFrame->ip_dst, 4);
+			memcpy(pFrame->ip_dst, pFrame->ip_src, 4);
+			memcpy(pFrame->ip_src, temp, 4);
+			bSuccess = mp_UnderLayer->Send((unsigned char*)pFrame, sizeof(pFrame));
+		}
+		else if(pFrame->ip_tos == 0x1)	//ping success
+		{
+			bSuccess = mp_aUpperLayer[0]->Receive((unsigned char*)pFrame->ip_data);
+		}
 		return bSuccess ;
 	}
 	else

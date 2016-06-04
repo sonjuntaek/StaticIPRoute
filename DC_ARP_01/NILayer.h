@@ -28,7 +28,6 @@ public:
 	pcap_if_t 		*GetAdapterObject(int iIndex);
 	void			SetAdapterNumber(int iNum);
 	void			SetAdapterList(LPADAPTER *plist);
-	void			SetAdapterObject(int iNum);
 
 	static UINT		ReadingThread(LPVOID pParam);
 	static UINT		FileTransferThread(LPVOID pParam);

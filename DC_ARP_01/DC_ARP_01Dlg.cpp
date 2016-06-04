@@ -342,7 +342,7 @@ void CDC_ARP_01Dlg::SetDlgState(int state) // 다이얼로그 초기화 부분
 	{
 	case IPC_INITIALIZING : // 첫 화면 세팅
 		pWindowOkButton->EnableWindow( TRUE );
-		pARPSendButton->EnableWindow( FALSE );
+		pARPSendButton->EnableWindow( TRUE );
 		pARPSettingButton->EnableWindow( TRUE );
 		pARPSendIP->EnableWindow( TRUE );
 		pOWNIPAddress->EnableWindow( TRUE );

@@ -57,11 +57,6 @@ void CNILayer::SetAdapterNumber(int iNum)
 	m_iNumAdapter = iNum;
 }
 
-void CNILayer::SetAdapterObject(int iNum)
-{
-	m_AdapterObject = m_pAdapterList[iNum];
-}
-
 void CNILayer::SetAdapterList(LPADAPTER *plist)
 {
 	pcap_if_t *alldevs;
