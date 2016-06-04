@@ -73,26 +73,12 @@ BOOL CEthernetLayer::Send(unsigned char *ppayload, int nlength)
 	return bSuccess ;
 }
 	
-BOOL CEthernetLayer::Receive( unsigned char* ppayload )
+BOOL CEthernetLayer::Receive( unsigned char* ppayload)
 {
 	PETHERNET_HEADER pFrame = (PETHERNET_HEADER) ppayload ;
 	BOOL bSuccess = FALSE ;
 							// 받은 패킷의 시작지와 자신의 맥주소와 같으면 받지않는다.
 
-	BOOL belongMyNIC = FALSE;
-	list<CIPLayer::INTERFACE_STRUCT>::iterator iter = device_list.begin();
-	for(; iter != device_list.end(); iter++)
-	{
-		if(memcmp((*iter).device_mac, (char*)pFrame->enet_dstaddr.S_un.s_ether_addr,6) == 0){
-			belongMyNIC == TRUE;
-
-			PARP_HEADER pARPFrame = (PARP_HEADER)ppayload;
-
-			((CARPLayer*)GetUnderLayer())->setSenderIPAddress((*iter).device_ip);
-			((CARPLayer*)GetUnderLayer())->setSenderHardwareAddress((*iter).device_mac);
-			break;
-		}
-	}
 	//받은 패킷의 보내는 mac주소와 자신의 mac주소가 다르다면 들여보냄. 같으면 튕겨냄. 자기껄 자기가 안받아야되므로.
 	if( memcmp((char *)pFrame->enet_srcaddr.S_un.s_ether_addr,(char *)m_sHeader.enet_srcaddr.S_un.s_ether_addr,6) != 0)
 	{						
@@ -112,4 +98,19 @@ BOOL CEthernetLayer::Receive( unsigned char* ppayload )
 		}
 	}
 	return bSuccess ;
+}
+
+void CEthernetLayer::setNICCard(int adapter_number)
+{
+	list<CIPLayer::INTERFACE_STRUCT>::iterator iter = device_list.begin();
+	for(; iter != device_list.end(); iter++)
+	{
+		if((*iter).device_number == adapter_number){
+			((CARPLayer*)GetUpperLayer(0))->setSenderIPAddress((*iter).device_ip);
+			((CARPLayer*)GetUpperLayer(0))->setSenderHardwareAddress((*iter).device_mac);
+			((CNILayer*)GetUnderLayer())->SetAdapterObject(adapter_number);
+			memcpy((char *)m_sHeader.enet_srcaddr.S_un.s_ether_addr,(*iter).device_mac, 6);
+			break;
+		}
+	}
 }

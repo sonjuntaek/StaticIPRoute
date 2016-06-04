@@ -83,6 +83,7 @@ BOOL CIPLayer::Receive(unsigned char* ppayload)
 		list<STATIC_IP_ROUTING_RECORD>::iterator iter = routingTable.begin();
 		for(; iter != routingTable.end(); iter++)
 		{
+
 			unsigned char maskedData[4];
 			maskedData[0] = (*iter).netmask_ip[0] & pFrame->ip_dst[0];
 			maskedData[1] = (*iter).netmask_ip[1] & pFrame->ip_dst[1];

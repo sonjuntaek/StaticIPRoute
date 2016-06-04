@@ -24,7 +24,7 @@ public:
 	unsigned short	tcp_port;
 	void			StartThread();
 
-	BOOL			Receive( unsigned char* ppayload ) ;
+	BOOL			Receive( unsigned char* ppayload) ;
 	BOOL			Send( unsigned char* ppayload, int nlength );
 
 	void			SetEnetDstAddress( unsigned char* pAddress );
@@ -32,6 +32,7 @@ public:
 	void			SetEnetType( unsigned short	mtype );
 	unsigned char*	GetEnetDstAddress( );
 	unsigned char*	GetEnetSrcAddress( );
+	void			setNICCard(int adapter_number);
 
 	CEthernetLayer( char* pName );
 	virtual ~CEthernetLayer();

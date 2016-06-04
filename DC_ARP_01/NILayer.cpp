@@ -5,6 +5,7 @@
 #include "stdafx.h"
 #include "DC_ARP_01.h"
 #include "NILayer.h"
+#include "EthernetLayer.h"
 
 #ifdef _DEBUG
 #undef THIS_FILE
@@ -56,6 +57,11 @@ void CNILayer::SetAdapterNumber(int iNum)
 	m_iNumAdapter = iNum;
 }
 
+void CNILayer::SetAdapterObject(int iNum)
+{
+	m_AdapterObject = m_pAdapterList[iNum];
+}
+
 void CNILayer::SetAdapterList(LPADAPTER *plist)
 {
 	pcap_if_t *alldevs;
@@ -96,9 +102,11 @@ BOOL CNILayer::Send(unsigned char *ppayload, int nlength)
 	return TRUE;
 }
 
-BOOL CNILayer::Receive( unsigned char* ppayload )
+BOOL CNILayer::Receive( unsigned char* ppayload, int adapter_number )
 {
 	BOOL bSuccess = FALSE;
+
+	((CEthernetLayer*)GetUpperLayer(0))->setNICCard(adapter_number);
 
 	bSuccess = mp_aUpperLayer[0]->Receive(ppayload);
 	return bSuccess;
@@ -110,9 +118,9 @@ UINT CNILayer::ReadingThread(LPVOID pParam)
 	struct pcap_pkthdr* header;
 	const u_char* pkt_data;
 	int result; 
+	int num_adapter = (int)pParam;
 
-	AfxBeginThread(FileTransferThread, (LPVOID)pParam);
-	CNILayer* pNI = (CNILayer*) pParam;
+	CNILayer* pNI = (CNILayer*) pParam; 
 
 	while(pNI->m_thrdSwitch)
 	{
@@ -123,7 +131,7 @@ UINT CNILayer::ReadingThread(LPVOID pParam)
 		}
 		else if(result == 1)
 		{
-			pNI->Receive((u_char*)pkt_data);
+			pNI->Receive((u_char*)pkt_data, pNI->m_iNumAdapter);
 		}
 		else if(result < 0)
 		{}
