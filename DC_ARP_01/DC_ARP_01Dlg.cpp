@@ -147,7 +147,7 @@ BOOL CDC_ARP_01Dlg::OnInitDialog()
 	}	
 
 	ifstream inFile;
-	inFile.open("input.txt");
+	inFile.open("input4.txt");
 	setRoutingTable(inFile);
 	inFile.close();
 
@@ -687,6 +687,9 @@ void CDC_ARP_01Dlg::readAndWriteTableDataFromFile(ifstream& inFile)
 		inFile >> metric;
 		inFile >> ip_data; dlg[i].netmask_length = ip_data;
 		inFile >> ip_data; nIndex = ip_data;
+		
+		char c;
+		inFile.get(c);
 
 		dlg[i].flag_string.Format("%s",flag_string);
 		dlg[i].interface_info.Format("%s",interface_info);

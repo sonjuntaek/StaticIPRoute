@@ -25,7 +25,11 @@
     <None Include="res\arpIcon.ico">
       <Filter>리소스 파일</Filter>
     </None>
-    <None Include="input.txt" />
+    <None Include="input1.txt" />
+    <None Include="input2.txt" />
+    <None Include="input3.txt" />
+    <None Include="input4.txt" />
+    <None Include="input5.txt" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="DC_ARP_01.h">
