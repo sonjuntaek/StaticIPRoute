@@ -13,6 +13,8 @@
 #include <pcap.h>
 #include <Packet32.h>
 
+#define MAX_ADAPTER_COUNT 5
+
 class CNILayer 
 	: public CBaseLayer
 {
@@ -22,12 +24,16 @@ protected:
 public:
 	BOOL			m_thrdSwitch;
 	unsigned char*  m_ppayload;
+	pcap_t*			adapterOpenedList[MAX_ADAPTER_COUNT];
+	unsigned int	adapterOpenedIndexList[MAX_ADAPTER_COUNT];
+	unsigned int	adapterOpenedSize;
 
 	void			PacketStartDriver();
 
 	pcap_if_t 		*GetAdapterObject(int iIndex);
 	void			SetAdapterNumber(int iNum);
 	void			SetAdapterList(LPADAPTER *plist);
+	void			SetOpenedAdapterObject(int index);
 
 	static UINT		ReadingThread(LPVOID pParam);
 	static UINT		FileTransferThread(LPVOID pParam);

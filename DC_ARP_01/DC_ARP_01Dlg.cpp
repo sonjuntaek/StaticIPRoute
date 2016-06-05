@@ -260,6 +260,7 @@ void CDC_ARP_01Dlg::SendData()
 			m_IP->SetSrcIPAddress((*iter).device_ip);
 			m_IP->SetSrcNetmask((*iter).device_netmask);
 			m_NI->SetAdapterNumber((*iter).device_number);
+			m_NI->SetOpenedAdapterObject(m_NI->adapterOpenedIndexList[(*iter).device_number]);
 			break;
 		}
 	}

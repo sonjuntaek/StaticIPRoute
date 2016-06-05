@@ -23,6 +23,7 @@ CNILayer::CNILayer( char *pName, LPADAPTER *pAdapterObject, int iNumAdapter )
 	m_AdapterObject = NULL;
 	m_iNumAdapter = iNumAdapter; 
 	m_thrdSwitch = TRUE;
+	adapterOpenedSize = 0;
 	SetAdapterList(NULL);
 }
 
@@ -39,10 +40,10 @@ void CNILayer::PacketStartDriver()
 		return;
 	}
 	
-	m_AdapterObject = pcap_open_live(m_pAdapterList[m_iNumAdapter]->name,1500,PCAP_OPENFLAG_PROMISCUOUS,2000,errbuf);
-	
+	adapterOpenedList[adapterOpenedSize] = pcap_open_live(m_pAdapterList[m_iNumAdapter]->name,1500,PCAP_OPENFLAG_PROMISCUOUS,2000,errbuf);
+	adapterOpenedIndexList[adapterOpenedSize++] = m_iNumAdapter;
 
-	if(!m_AdapterObject){
+	if(!adapterOpenedList[adapterOpenedSize]){
 		AfxMessageBox(errbuf);
 		return;
 	}
@@ -53,6 +54,11 @@ void CNILayer::PacketStartDriver()
 pcap_if_t *CNILayer::GetAdapterObject(int iIndex)
 {
 	return m_pAdapterList[iIndex];
+}
+
+void CNILayer::SetOpenedAdapterObject(int index)
+{
+	m_AdapterObject = adapterOpenedList[index];
 }
 
 PPACKET_OID_DATA& CNILayer::getNICAddress(int index)
@@ -132,19 +138,24 @@ UINT CNILayer::ReadingThread(LPVOID pParam)
 
 	CNILayer* pNI = (CNILayer*) pParam; 
 
+	int i = 0;
 	while(pNI->m_thrdSwitch)
 	{
-		result = pcap_next_ex(pNI->m_AdapterObject,&header,&pkt_data);
+		result = pcap_next_ex(pNI->adapterOpenedList[i % pNI->adapterOpenedSize],&header,&pkt_data);
 
 		if(result == 0)
 		{
 		}
+
 		else if(result == 1)
 		{
-			pNI->Receive((u_char*)pkt_data, pNI->m_iNumAdapter);
+			pNI->Receive((u_char*)pkt_data, pNI->adapterOpenedIndexList[i]);
 		}
 		else if(result < 0)
 		{}
+		i++;
+		if(i == 20)
+			i = 0;
 	}
 	return 0;
 	///////////////////////////////////////////////////////////////////////
