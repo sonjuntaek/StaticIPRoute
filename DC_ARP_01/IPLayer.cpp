@@ -86,10 +86,11 @@ BOOL CIPLayer::Send(unsigned char* ppayload, int nlength)
 
 	if (memcmp(my_address, opposite_address, 4) != 0)
 	{
+		BOOL isDestinationExist = FALSE;
 		list<STATIC_IP_ROUTING_RECORD>::iterator iter = routingTable.begin();
 		for(; iter != routingTable.end(); iter++)
-		{
-			if(memcmp((*iter).netmask_ip, default_netmask, 4))
+		{	
+			if(memcmp((*iter).destination_ip, my_address, 4) == 0)
 			{
 				((CARPLayer*)GetUnderLayer())->next_ethernet_type = ETHER_PROTO_TYPE_ARP;
 				((CARPLayer*)GetUnderLayer())->setTargetIPAddress((*iter).gateway_ip);
@@ -102,6 +103,42 @@ BOOL CIPLayer::Send(unsigned char* ppayload, int nlength)
 					bSuccess = mp_UnderLayer->Send(ppayload,sizeof(ppayload));
 				}
 			}
+			break;
+		}
+
+		if(isDestinationExist == FALSE)
+		{
+			list<STATIC_IP_ROUTING_RECORD>::iterator iter = routingTable.begin();
+			for(; iter != routingTable.end(); iter++)
+			{	
+				if(memcmp((*iter).netmask_ip, default_netmask, 4) == 0)
+				{
+					((CARPLayer*)GetUnderLayer())->next_ethernet_type = ETHER_PROTO_TYPE_ARP;
+					((CARPLayer*)GetUnderLayer())->setTargetIPAddress((*iter).gateway_ip);
+					bSuccess = mp_UnderLayer->Send(ppayload,sizeof(ppayload));
+
+					if(bSuccess)
+					{
+						((CARPLayer*)GetUnderLayer())->next_ethernet_type = ETHER_PROTO_TYPE_IP;
+						((CARPLayer*)GetUnderLayer())->setTargetIPAddress(m_sHeader.ip_dst);
+						bSuccess = mp_UnderLayer->Send(ppayload,sizeof(ppayload));
+					}
+				}
+				break;
+			}
+		}
+	}
+	else
+	{
+		((CARPLayer*)GetUnderLayer())->next_ethernet_type = ETHER_PROTO_TYPE_ARP;
+		((CARPLayer*)GetUnderLayer())->setTargetIPAddress(m_sHeader.ip_dst);
+		bSuccess = mp_UnderLayer->Send(ppayload,sizeof(ppayload));
+
+		if(bSuccess)
+		{
+			((CARPLayer*)GetUnderLayer())->next_ethernet_type = ETHER_PROTO_TYPE_IP;
+			((CARPLayer*)GetUnderLayer())->setTargetIPAddress(m_sHeader.ip_dst);
+			bSuccess = mp_UnderLayer->Send(ppayload,sizeof(ppayload));
 		}
 	}
 	return bSuccess;

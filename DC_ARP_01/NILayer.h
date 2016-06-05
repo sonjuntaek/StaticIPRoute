@@ -13,7 +13,7 @@
 #include <pcap.h>
 #include <Packet32.h>
 
-#define MAX_ADAPTER_COUNT 5
+#define MAX_ADAPTER_COUNT 8
 
 class CNILayer 
 	: public CBaseLayer

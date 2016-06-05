@@ -41,7 +41,7 @@ void CNILayer::PacketStartDriver()
 	}
 	
 	adapterOpenedList[adapterOpenedSize] = pcap_open_live(m_pAdapterList[m_iNumAdapter]->name,1500,PCAP_OPENFLAG_PROMISCUOUS,2000,errbuf);
-	adapterOpenedIndexList[adapterOpenedSize++] = m_iNumAdapter;
+	adapterOpenedIndexList[m_iNumAdapter] = adapterOpenedSize++;
 
 	if(!adapterOpenedList[adapterOpenedSize]){
 		AfxMessageBox(errbuf);
