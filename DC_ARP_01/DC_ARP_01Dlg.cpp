@@ -80,9 +80,6 @@ void CDC_ARP_01Dlg::DoDataExchange(CDataExchange* pDX)
 {
 	CDialogEx::DoDataExchange(pDX);
 	DDX_Control(pDX, IDC_ARP_CACHE_TABLE_LIST, m_ArpTable);
-	DDX_Control(pDX, IDC_ARP_SEND_IP, m_unDstIPAddr);
-	DDX_Control(pDX, IDC_NICARD_COMBO, m_ComboEnetName);
-	DDX_Control(pDX, IDC_OWN_IP_ADDRESS, m_unSrcIPAddr);
 	DDX_Control(pDX, IDC_PROXY_ARP_ENTRY_LIST, m_proxyARPEntry);
 	DDX_Control(pDX, IDC_STATIC_ROUTING_TABLE, m_staticIPTable);
 }
@@ -149,6 +146,11 @@ BOOL CDC_ARP_01Dlg::OnInitDialog()
 		m_staticIPTable.InsertColumn(i,&levCol);  //LVCOLUMN구조체로 만들어진 값을 토대로 리스트 컨트롤에 칼럼을 삽입
 	}	
 
+	ifstream inFile;
+	inFile.open("input.txt");
+	setRoutingTable(inFile);
+	inFile.close();
+
 	// 이 대화 상자의 아이콘을 설정합니다. 응용 프로그램의 주 창이 대화 상자가 아닐 경우에는
 	//  프레임워크가 이 작업을 자동으로 수행합니다.
 	SetIcon(m_hIcon, TRUE);			// 큰 아이콘을 설정합니다.
@@ -158,7 +160,6 @@ BOOL CDC_ARP_01Dlg::OnInitDialog()
 	SetRegstryMessage( ) ;
 	SetTimer(2, 2000, NULL); // Timer 동작함. arptable을 2초마다 갱신해줌.
 	SetDlgState(IPC_INITIALIZING);
-	SetDlgState(CFT_COMBO_SET);
 
 	return TRUE;  // 포커스를 컨트롤에 설정하지 않으면 TRUE를 반환합니다.
 }
@@ -326,13 +327,8 @@ void CDC_ARP_01Dlg::SetDlgState(int state) // 다이얼로그 초기화 부분
 	CButton*			pARPAllDeleteButton = (CButton*) GetDlgItem( IDC_ARP_ALL_DELETE_BUTTON ) ;
 	CButton*			pWindowOkButton = (CButton*) GetDlgItem( IDC_WINDOW_OK_BUTTON ) ;
 	CButton*			pWindowCloseButton = (CButton*) GetDlgItem( IDC_WINDOW_CLOSE_BUTTON ) ;
-	CButton*			pARPSendButton = (CButton*) GetDlgItem( IDC_ARP_SEND_BUTTON ) ;
 	CButton*			pProxyDeleteButton = (CButton*) GetDlgItem( IDC_PROXY_DELETE_BUTTON ) ;
 	CButton*			pProxyAddButton = (CButton*) GetDlgItem( IDC_PROXY_ADD_BUTTON  ) ;
-	CButton*			pARPSettingButton = (CButton*) GetDlgItem( IDC_ARP_SETTING_BUTTON ) ;
-
-	CIPAddressCtrl*		pARPSendIP = (CIPAddressCtrl*) GetDlgItem( IDC_ARP_SEND_IP );
-	CIPAddressCtrl*		pOWNIPAddress = (CIPAddressCtrl*) GetDlgItem( IDC_OWN_IP_ADDRESS );
 
 	//CEdit*				pGratuitousARPAddress = (CEdit*) GetDlgItem( IDC_GRATUITOUS_ADDRESS_BOX ) ;
 
@@ -342,25 +338,16 @@ void CDC_ARP_01Dlg::SetDlgState(int state) // 다이얼로그 초기화 부분
 	{
 	case IPC_INITIALIZING : // 첫 화면 세팅
 		pWindowOkButton->EnableWindow( TRUE );
-		pARPSendButton->EnableWindow( TRUE );
-		pARPSettingButton->EnableWindow( TRUE );
-		pARPSendIP->EnableWindow( TRUE );
-		pOWNIPAddress->EnableWindow( TRUE );
 		//pGratuitousARPAddress->EnableWindow ( TRUE );
 		m_proxyARPEntry.EnableWindow( FALSE );
 		m_ArpTable.EnableWindow( FALSE ) ;
 		break ;
 
 	case IPC_READYTOSEND : // Send 버튼을 눌렀을 때 세팅
-		pARPSendButton->EnableWindow( TRUE );
-		pARPSettingButton->EnableWindow( TRUE );
-		pARPSendIP->EnableWindow( TRUE );
-		pOWNIPAddress->EnableWindow( TRUE );
 		//pGratuitousARPAddress->EnableWindow ( TRUE );
 		m_proxyARPEntry.EnableWindow( TRUE );
 
 		DWORD dwIP;
-		pARPSendIP->GetAddress(dstIPAddrString[0],dstIPAddrString[1],dstIPAddrString[2],dstIPAddrString[3] );
 		//텍스트에 적힌 값 갖고오는거.
 
 		m_ArpTable.EnableWindow( TRUE ) ;
@@ -370,25 +357,14 @@ void CDC_ARP_01Dlg::SetDlgState(int state) // 다이얼로그 초기화 부분
 	case IPC_ERROR :		break ;
 	case IPC_ADDR_SET :	// Setting 버튼을 눌렀을 때
 		
-		pARPSettingButton->SetWindowText( "Reset" ) ; 
-		pARPSendIP->EnableWindow( FALSE ) ;
 		pEnetNameCombo->EnableWindow( FALSE );
-		pARPSendButton->EnableWindow( TRUE );
-		pARPSendIP->EnableWindow( FALSE );
 
-		pOWNIPAddress->GetAddress(srcIPAddrString[0],srcIPAddrString[1],srcIPAddrString[2],srcIPAddrString[3]) ;
-
-		pOWNIPAddress->EnableWindow( FALSE ) ;
 		m_NI->m_thrdSwitch = TRUE;
 		break;
 		
 	case IPC_ADDR_RESET : // Reset 버튼을 눌렀을 때
 		
-		pARPSettingButton->SetWindowText( "Setting" ) ; 
-		pARPSendIP->EnableWindow( TRUE ) ;
-		pOWNIPAddress->EnableWindow( TRUE ) ;
 		pEnetNameCombo->EnableWindow( TRUE );
-		pARPSendButton->EnableWindow( FALSE );
 		m_NI->m_thrdSwitch = FALSE;
 		break ;
 		
@@ -664,6 +640,160 @@ void CDC_ARP_01Dlg::OnBnClickedWindowCloseButton()
 }
 
 
+void CDC_ARP_01Dlg::setRoutingTable(ifstream& inFile)
+{
+	if (inFile != NULL)
+	{
+		readAndWriteTableDataFromFile(inFile);
+	}
+}
+
+void CDC_ARP_01Dlg::readAndWriteTableDataFromFile(ifstream& inFile)
+{
+	int count = 0;
+	CIPLayer::STATIC_IP_ROUTING_RECORD dlg[5];
+	inFile>>count;
+	for(int i = 0; i < count; i++)
+	{
+		dlg[i] = CIPLayer::STATIC_IP_ROUTING_RECORD();
+		unsigned char flag_string[10];
+		unsigned char interface_info[50];
+		unsigned char metric[2];
+		unsigned char nIndex;
+		unsigned int  ip_data;
+		inFile >> ip_data; dlg[i].destination_ip[0] = ip_data;
+		inFile >> ip_data; dlg[i].destination_ip[1] = ip_data;
+		inFile >> ip_data; dlg[i].destination_ip[2] = ip_data;
+		inFile >> ip_data; dlg[i].destination_ip[3] = ip_data;
+		
+		inFile >> ip_data; dlg[i].netmask_ip[0] = ip_data;
+		inFile >> ip_data; dlg[i].netmask_ip[1] = ip_data;
+		inFile >> ip_data; dlg[i].netmask_ip[2] = ip_data;
+		inFile >> ip_data; dlg[i].netmask_ip[3] = ip_data;
+		
+		inFile >> ip_data; dlg[i].gateway_ip[0] = ip_data;
+		inFile >> ip_data; dlg[i].gateway_ip[1] = ip_data;
+		inFile >> ip_data; dlg[i].gateway_ip[2] = ip_data;
+		inFile >> ip_data; dlg[i].gateway_ip[3] = ip_data;
+
+		inFile >> ip_data; dlg[i].own_ip[0] = ip_data;
+		inFile >> ip_data; dlg[i].own_ip[1] = ip_data;
+		inFile >> ip_data; dlg[i].own_ip[2] = ip_data;
+		inFile >> ip_data; dlg[i].own_ip[3] = ip_data;
+
+		inFile >> ip_data; dlg[i].flag = ip_data;
+		inFile >> flag_string;
+		inFile >> interface_info;
+		inFile >> metric;
+		inFile >> ip_data; dlg[i].netmask_length = ip_data;
+		inFile >> ip_data; nIndex = ip_data;
+
+		dlg[i].flag_string.Format("%s",flag_string);
+		dlg[i].interface_info.Format("%s",interface_info);
+		dlg[i].metric.Format("%s",metric);
+
+		CString recordipAddress;
+		char szText[50] = "";
+		UpdateData(TRUE);
+
+		LVITEM levItem;
+
+		levItem.mask = LVIF_TEXT;
+		levItem.iItem = 0;
+		CIPLayer::STATIC_IP_ROUTING_RECORD newRecord;
+		memcpy(newRecord.destination_ip,dlg[i].destination_ip,4);
+		memcpy(newRecord.netmask_ip,dlg[i].netmask_ip,4);
+		memcpy(newRecord.gateway_ip,dlg[i].gateway_ip,4);
+		memcpy(newRecord.own_ip,dlg[i].own_ip,4);
+		newRecord.flag = dlg[i].flag;
+		newRecord.flag_string = dlg[i].flag_string;
+		newRecord.interface_info = dlg[i].interface_info;
+		newRecord.metric = dlg[i].metric;
+		newRecord.netmask_length = dlg[i].netmask_length;
+	
+		BOOL isDeviceNotOpened = TRUE;
+		list<CIPLayer::INTERFACE_STRUCT>::iterator iter = device_list.begin();
+		for(; iter != device_list.end(); iter++)
+		{
+			if((*iter).device_number == nIndex)
+			{
+				isDeviceNotOpened = FALSE;
+				break;
+			}
+		}
+		if(isDeviceNotOpened == TRUE)
+		{
+			m_NI->SetAdapterNumber(nIndex);
+			m_NI->PacketStartDriver();
+			CIPLayer::INTERFACE_STRUCT newDevice;
+			unsigned char dst_mac[12];
+			memset(newDevice.device_ip, 0, 4);
+			memset(newDevice.device_mac, 0, 6);
+			memcpy(newDevice.device_ip, dlg[i].own_ip, 4);
+			memcpy(newDevice.device_mac, m_NI->getNICAddress(nIndex), 6);
+			
+			memcpy(newDevice.device_mac, dst_mac, 6);
+			device_list.push_back(newDevice);
+		}	
+		
+		newRecord.device_number = nIndex;
+
+		levItem.iSubItem = 0;
+		sprintf(szText,"%s"," ");
+		levItem.pszText=(LPSTR)szText;
+		m_staticIPTable.InsertItem(&levItem);
+	
+		levItem.iSubItem = 1;
+		recordipAddress.Format(" %3d.%3d.%3d.%3d  ", newRecord.destination_ip[0],newRecord.destination_ip[1],
+									newRecord.destination_ip[2],newRecord.destination_ip[3] );
+		sprintf(szText,"%s",recordipAddress);
+		levItem.pszText=(LPSTR)szText;
+		m_staticIPTable.SetItem(&levItem);
+	
+		levItem.iSubItem = 2;
+		recordipAddress.Format(" %3d.%3d.%3d.%3d  ", newRecord.netmask_ip[0],newRecord.netmask_ip[1],
+									newRecord.netmask_ip[2],newRecord.netmask_ip[3] );
+		sprintf(szText,"%s",recordipAddress);
+		levItem.pszText=(LPSTR)szText;
+		m_staticIPTable.SetItem(&levItem);
+		
+		levItem.iSubItem = 3;
+		if(IS_FLAG_GATEWAY(newRecord.flag))
+		{
+			recordipAddress.Format(" %3d.%3d.%3d.%3d  ", newRecord.gateway_ip[0],newRecord.gateway_ip[1],
+									newRecord.gateway_ip[2],newRecord.gateway_ip[3] );
+		}
+		else
+		{
+			recordipAddress.SetString("연결됨");
+		}
+		sprintf(szText,"%s",recordipAddress);
+		levItem.pszText=(LPSTR)szText;
+		m_staticIPTable.SetItem(&levItem);
+	
+		levItem.iSubItem = 4;
+		sprintf(szText,"%s",newRecord.flag_string);
+		levItem.pszText=(LPSTR)szText;
+		m_staticIPTable.SetItem(&levItem);
+	
+		levItem.iSubItem = 5;
+		sprintf(szText,"%s",newRecord.interface_info);
+		levItem.pszText=(LPSTR)szText;
+		m_staticIPTable.SetItem(&levItem);
+	
+		levItem.iSubItem = 6;
+		sprintf(szText,"%s",newRecord.metric);
+		levItem.pszText=(LPSTR)szText;
+		m_staticIPTable.SetItem(&levItem);
+
+		m_IP->routingTable.push_back(newRecord);
+		m_IP->device_list.assign(device_list.begin(), device_list.end());
+		m_ETH->device_list.assign(device_list.begin(), device_list.end());
+		m_IP->routingTable.sort();
+	}
+}
+
+
 void CDC_ARP_01Dlg::OnBnClickedRoutingAddButton()
 {
 	// TODO: 여기에 컨트롤 알림 처리기 코드를 추가합니다.
@@ -768,7 +898,7 @@ void CDC_ARP_01Dlg::OnBnClickedRoutingAddButton()
 		m_staticIPTable.SetItem(&levItem);
 		
 		levItem.iSubItem = 6;
-		sprintf(szText,"%s",dlg.metric);
+		sprintf(szText,"%s",newRecord.metric);
 		levItem.pszText=(LPSTR)szText;
 		m_staticIPTable.SetItem(&levItem);
 

@@ -31,7 +31,7 @@ public:
 
 	static UINT		ReadingThread(LPVOID pParam);
 	static UINT		FileTransferThread(LPVOID pParam);
-
+	PPACKET_OID_DATA& getNICAddress(int index);
 	BOOL			Receive( unsigned char *ppayload, int adapter_number) ;
 	BOOL			Send( unsigned char *ppayload, int nlength );
 

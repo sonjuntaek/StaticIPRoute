@@ -12,6 +12,7 @@
 #include "afxwin.h"
 #include "afxcmn.h"
 #include "resource.h"
+#include "StaticRoutingDlg.h"
 #include <list>
 
 // CDC_ARP_01Dlg 대화 상자
@@ -63,9 +64,12 @@ public:
 	afx_msg void OnBnClickedRoutingAddButton();
 	afx_msg void OnBnClickedRoutingDeleteButton();
 	afx_msg void OnBnClickedStaticRouteDeleteButton();
-
+	void setRoutingTable(ifstream& inFile);
+	void readAndWriteTableDataFromFile(ifstream& inFile);
 	CNILayer*		m_NI;
+
 // 구현입니다.
+
 protected:
 	virtual void DoDataExchange(CDataExchange* pDX);	// DDX/DDV 지원입니다.
 	HICON m_hIcon;

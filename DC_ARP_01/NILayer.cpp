@@ -40,10 +40,13 @@ void CNILayer::PacketStartDriver()
 	}
 	
 	m_AdapterObject = pcap_open_live(m_pAdapterList[m_iNumAdapter]->name,1500,PCAP_OPENFLAG_PROMISCUOUS,2000,errbuf);
+	
+
 	if(!m_AdapterObject){
 		AfxMessageBox(errbuf);
 		return;
 	}
+
 	AfxBeginThread(ReadingThread, this);
 }
 
@@ -52,6 +55,18 @@ pcap_if_t *CNILayer::GetAdapterObject(int iIndex)
 	return m_pAdapterList[iIndex];
 }
 
+PPACKET_OID_DATA& CNILayer::getNICAddress(int index)
+{
+	LPADAPTER adapter = PacketOpenAdapter(m_pAdapterList[index]->name);
+	
+	PPACKET_OID_DATA OidData;
+	OidData = (PPACKET_OID_DATA)malloc(sizeof(PACKET_OID_DATA));
+	OidData->Oid = 0x01010101;
+	OidData->Length = 6;
+
+	PacketRequest(adapter, FALSE, OidData);
+	return OidData;
+}
 void CNILayer::SetAdapterNumber(int iNum)
 {
 	m_iNumAdapter = iNum;
