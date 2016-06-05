@@ -123,7 +123,7 @@ BOOL CNILayer::Receive( unsigned char* ppayload, int adapter_number )
 	BOOL bSuccess = FALSE;
 
 	((CEthernetLayer*)GetUpperLayer(0))->setNICCard(adapter_number);
-
+	//SetOpenedAdapterObject(adapter_number);
 	bSuccess = mp_aUpperLayer[0]->Receive(ppayload);
 	return bSuccess;
 }
@@ -149,7 +149,7 @@ UINT CNILayer::ReadingThread(LPVOID pParam)
 
 		else if(result == 1)
 		{
-			pNI->Receive((u_char*)pkt_data, pNI->adapterOpenedIndexList[i]);
+			pNI->Receive((u_char*)pkt_data, i);
 		}
 		else if(result < 0)
 		{}

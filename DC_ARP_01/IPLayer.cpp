@@ -193,31 +193,35 @@ BOOL CIPLayer::Receive(unsigned char* ppayload)
 				unsigned char isFlagUp = IS_FLAG_UP((*iter).flag);
 				unsigned char isFlagGateway = IS_FLAG_GATEWAY((*iter).flag);
 
-				if( isFlagUp && isFlagGateway )
-				{
-					((CARPLayer*)GetUnderLayer())->next_ethernet_type = ETHER_PROTO_TYPE_ARP;
-					((CARPLayer*)GetUnderLayer())->setTargetIPAddress((*iter).gateway_ip);
-					bSuccess = mp_UnderLayer->Send(ppayload,sizeof(ppayload));
-
-					if(bSuccess)
-					{
-						((CARPLayer*)GetUnderLayer())->next_ethernet_type = ETHER_PROTO_TYPE_IP;
-						((CARPLayer*)GetUnderLayer())->setTargetIPAddress(pFrame->ip_dst);
-						bSuccess = mp_UnderLayer->Send(ppayload,sizeof(ppayload));
-					}
 				
-				}
-				else if( isFlagUp )
+				if( isFlagUp )
 				{
-					((CARPLayer*)GetUnderLayer())->next_ethernet_type = ETHER_PROTO_TYPE_ARP;
-					((CARPLayer*)GetUnderLayer())->setTargetIPAddress(pFrame->ip_dst);
-					bSuccess = mp_UnderLayer->Send(ppayload,sizeof(ppayload));
-
-					if(bSuccess)
+					if( isFlagGateway )
 					{
-						((CARPLayer*)GetUnderLayer())->next_ethernet_type = ETHER_PROTO_TYPE_IP;
+						((CARPLayer*)GetUnderLayer())->next_ethernet_type = ETHER_PROTO_TYPE_ARP;
+						((CARPLayer*)GetUnderLayer())->setTargetIPAddress((*iter).gateway_ip);
+						bSuccess = mp_UnderLayer->Send(ppayload,sizeof(ppayload));
+
+						if(bSuccess)
+						{
+							((CARPLayer*)GetUnderLayer())->next_ethernet_type = ETHER_PROTO_TYPE_IP;
+							((CARPLayer*)GetUnderLayer())->setTargetIPAddress(pFrame->ip_dst);
+							bSuccess = mp_UnderLayer->Send(ppayload,sizeof(ppayload));
+						}
+				
+					}
+					else
+					{
+						((CARPLayer*)GetUnderLayer())->next_ethernet_type = ETHER_PROTO_TYPE_ARP;
 						((CARPLayer*)GetUnderLayer())->setTargetIPAddress(pFrame->ip_dst);
 						bSuccess = mp_UnderLayer->Send(ppayload,sizeof(ppayload));
+
+						if(bSuccess)
+						{
+							((CARPLayer*)GetUnderLayer())->next_ethernet_type = ETHER_PROTO_TYPE_IP;
+							((CARPLayer*)GetUnderLayer())->setTargetIPAddress(pFrame->ip_dst);
+							bSuccess = mp_UnderLayer->Send(ppayload,sizeof(ppayload));
+						}
 					}
 				}
 				break;
