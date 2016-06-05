@@ -171,7 +171,11 @@ BOOL CARPLayer::Send(unsigned char* ppayload, int length)
 		memcpy(arpHeader.arpTargetIPAddress, targetIPAddress, 4);
 	
 		BOOL bSuccess = FALSE ;
-		bSuccess = mp_UnderLayer->Send((unsigned char*)&arpHeader,length+ARP_HEADER_SIZE);
+
+		if(next_ethernet_type == ETHER_PROTO_TYPE_IP)
+			bSuccess = mp_UnderLayer->Send((unsigned char*)&arpHeader.arpData,length+ARP_HEADER_SIZE);
+		else
+			bSuccess = mp_UnderLayer->Send((unsigned char*)&arpHeader,length+ARP_HEADER_SIZE);
 
 		return bSuccess;
 }
