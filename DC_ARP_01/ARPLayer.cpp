@@ -63,6 +63,7 @@ void CARPLayer::setTargetIPAddress(unsigned char* targetIP)
 void CARPLayer::setTargetHardwareAddress(unsigned char* targetHard)
 {
 	memcpy(arpHeader.arpTargetHardwareAddress, targetHard, 6);
+	memcpy(targetMACAddress, targetHard, 6);
 }
 
 void CARPLayer::setEthernetHardwareAddress(unsigned char* macAddress)
@@ -75,6 +76,20 @@ void CARPLayer::setNICard(int adapter_number)
 	((CNILayer*)((CEthernetLayer*)GetUnderLayer())->GetUnderLayer())->SetOpenedAdapterObject(((CNILayer*)((CEthernetLayer*)GetUnderLayer())->GetUnderLayer())->adapterOpenedIndexList[adapter_number]);
 }
 
+unsigned char* CARPLayer::getHardwareAddressByGivenIPAddress(unsigned char* ipAddress)
+{
+	unsigned char* return_value;
+	list<ARP_CACHE_RECORD>::iterator cacheIter = arpCacheTable.begin();
+	for(cacheIter; cacheIter != arpCacheTable.end(); cacheIter++)// gratuitous 아니라면, cache에 있는 만큼 for구문돌림.
+	{
+		if(memcmp((*cacheIter).ipAddress, ipAddress, 4) == 0) //보내려는 ip와 같은 ip가 있다면 
+		{
+			return_value = (*cacheIter).ethernetAddress;
+			break;
+		}
+	}
+	return return_value;
+}
 
 list<CARPLayer::ARP_CACHE_RECORD> CARPLayer::getARPCacheTable(void)
 {
@@ -104,6 +119,11 @@ BOOL CARPLayer::Send(unsigned char* ppayload, int length)
 					isCacheAvailable = TRUE;
 					break;
 				}
+				if(memcmp((*cacheIter).ethernetAddress, targetMACAddress, 6) == 0)
+				{
+					isCacheAvailable = TRUE;
+					break;
+				}
 			}
 		}
 
@@ -113,7 +133,6 @@ BOOL CARPLayer::Send(unsigned char* ppayload, int length)
 			setTargetHardwareAddress((*cacheIter).ethernetAddress);	//캐시에 있다면 mac 주소를 알게 된 것이므로, 이 mac 주소로 재설정.
 			((CEthernetLayer*)GetUnderLayer())->m_sHeader.enet_type = next_ethernet_type;
 			((CEthernetLayer*)GetUnderLayer())->SetEnetDstAddress((*cacheIter).ethernetAddress);// ethernet layer의 mac 주소도 다시 설정.
-			((CEthernetLayer*)GetUnderLayer())->SetEnetType( 0x0008 ); //0x0800 //ARP로 보낼 필요 없으므로 IP로 타입 설정해줌 
 
 		}
 		else if(isGratuitousPacket == TRUE)
@@ -124,7 +143,7 @@ BOOL CARPLayer::Send(unsigned char* ppayload, int length)
 		{
 			memset(arpHeader.arpTargetHardwareAddress, 0, 6);
 			((CEthernetLayer*)GetUnderLayer())->SetEnetDstAddress(BROADCAST_ADDR);
-			((CEthernetLayer*)GetUnderLayer())->SetEnetType( 0x0608 ); //0x0806 ARP
+			((CEthernetLayer*)GetUnderLayer())->m_sHeader.enet_type = next_ethernet_type;
 
 
 			ARP_CACHE_RECORD newRecord;

@@ -100,6 +100,8 @@ BOOL CIPLayer::Send(unsigned char* ppayload, int nlength)
 				{
 					((CARPLayer*)GetUnderLayer())->next_ethernet_type = ETHER_PROTO_TYPE_IP;
 					((CARPLayer*)GetUnderLayer())->setTargetIPAddress(m_sHeader.ip_dst);
+					unsigned char* targetMAC = ((CARPLayer*)GetUnderLayer())->getHardwareAddressByGivenIPAddress((*iter).gateway_ip);
+					((CARPLayer*)GetUnderLayer())->setTargetHardwareAddress(targetMAC);
 					bSuccess = mp_UnderLayer->Send(ppayload,sizeof(ppayload));
 				}
 			}
@@ -121,6 +123,8 @@ BOOL CIPLayer::Send(unsigned char* ppayload, int nlength)
 					{
 						((CARPLayer*)GetUnderLayer())->next_ethernet_type = ETHER_PROTO_TYPE_IP;
 						((CARPLayer*)GetUnderLayer())->setTargetIPAddress(m_sHeader.ip_dst);
+						unsigned char* targetMAC = ((CARPLayer*)GetUnderLayer())->getHardwareAddressByGivenIPAddress((*iter).gateway_ip);
+						((CARPLayer*)GetUnderLayer())->setTargetHardwareAddress(targetMAC);
 						bSuccess = mp_UnderLayer->Send(ppayload,sizeof(ppayload));
 					}
 				}
@@ -138,6 +142,8 @@ BOOL CIPLayer::Send(unsigned char* ppayload, int nlength)
 		{
 			((CARPLayer*)GetUnderLayer())->next_ethernet_type = ETHER_PROTO_TYPE_IP;
 			((CARPLayer*)GetUnderLayer())->setTargetIPAddress(m_sHeader.ip_dst);
+			unsigned char* targetMAC = ((CARPLayer*)GetUnderLayer())->getHardwareAddressByGivenIPAddress(m_sHeader.ip_dst);
+			((CARPLayer*)GetUnderLayer())->setTargetHardwareAddress(targetMAC);
 			bSuccess = mp_UnderLayer->Send(ppayload,sizeof(ppayload));
 		}
 	}
@@ -206,6 +212,8 @@ BOOL CIPLayer::Receive(unsigned char* ppayload)
 						{
 							((CARPLayer*)GetUnderLayer())->next_ethernet_type = ETHER_PROTO_TYPE_IP;
 							((CARPLayer*)GetUnderLayer())->setTargetIPAddress(pFrame->ip_dst);
+							unsigned char* targetMAC = ((CARPLayer*)GetUnderLayer())->getHardwareAddressByGivenIPAddress((*iter).gateway_ip);
+							((CARPLayer*)GetUnderLayer())->setTargetHardwareAddress(targetMAC);
 							bSuccess = mp_UnderLayer->Send(ppayload,sizeof(ppayload));
 						}
 				
@@ -220,6 +228,8 @@ BOOL CIPLayer::Receive(unsigned char* ppayload)
 						{
 							((CARPLayer*)GetUnderLayer())->next_ethernet_type = ETHER_PROTO_TYPE_IP;
 							((CARPLayer*)GetUnderLayer())->setTargetIPAddress(pFrame->ip_dst);
+							unsigned char* targetMAC = ((CARPLayer*)GetUnderLayer())->getHardwareAddressByGivenIPAddress(pFrame->ip_dst);
+							((CARPLayer*)GetUnderLayer())->setTargetHardwareAddress(targetMAC);
 							bSuccess = mp_UnderLayer->Send(ppayload,sizeof(ppayload));
 						}
 					}

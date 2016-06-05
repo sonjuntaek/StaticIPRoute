@@ -62,6 +62,7 @@ public:
 	void setEthernetHardwareAddress(unsigned char* macAddress);
 	void setAdapter(CString adapter);
 	void setNICard(int adapter_number);
+	unsigned char* getHardwareAddressByGivenIPAddress(unsigned char* ipAddress);
 	list<ARP_CACHE_RECORD> getARPCacheTable(void);
 
 	BOOL Send(unsigned char* ppayload, int length);
@@ -77,5 +78,6 @@ protected:
 	unsigned char ownMACAddress[6];
 	unsigned char ownIPAddress[4];
 	unsigned char targetIPAddress[4];
+	unsigned char targetMACAddress[6];
 };
 
