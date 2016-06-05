@@ -61,6 +61,7 @@ public:
 	void setTargetHardwareAddress(unsigned char* targetHard);
 	void setEthernetHardwareAddress(unsigned char* macAddress);
 	void setAdapter(CString adapter);
+	void setNICard(int adapter_number);
 	list<ARP_CACHE_RECORD> getARPCacheTable(void);
 
 	BOOL Send(unsigned char* ppayload, int length);

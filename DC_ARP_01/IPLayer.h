@@ -38,7 +38,7 @@ public:
 	void IPAddressMasking(unsigned char* dst_ip, unsigned char* src_ip, unsigned char* mask_ip);
 	BOOL Send(unsigned char* ppayload, int nlength);
 	BOOL Receive(unsigned char* ppayload);
-	void setProtocolStack(unsigned char* ipAddress, unsigned char* macAddress);
+	void setProtocolStack(unsigned char* ipAddress, unsigned char* macAddress, int adapter_number);
 
 
 	typedef struct _IPLayer_HEADER {

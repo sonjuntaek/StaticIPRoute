@@ -149,7 +149,7 @@ UINT CNILayer::ReadingThread(LPVOID pParam)
 
 		else if(result == 1)
 		{
-			pNI->Receive((u_char*)pkt_data, i);
+			pNI->Receive((u_char*)pkt_data, pNI->adapterOpenedIndexList[i % pNI->adapterOpenedSize]);
 		}
 		else if(result < 0)
 		{}

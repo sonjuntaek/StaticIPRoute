@@ -1,5 +1,6 @@
 #include "StdAfx.h"
 #include "ARPLayer.h"
+#include "NILayer.h"
 
 CARPLayer::CARPLayer(char* pName)
 : CBaseLayer( pName ), ARP_REQUEST(0x100), ARP_REPLY(0x200) // bigendian 으로 가기때문에 이렇게 설정.
@@ -68,6 +69,12 @@ void CARPLayer::setEthernetHardwareAddress(unsigned char* macAddress)
 {
 	((CEthernetLayer*)GetUnderLayer())->SetEnetSrcAddress(macAddress);
 }
+
+void CARPLayer::setNICard(int adapter_number)
+{
+	((CNILayer*)((CEthernetLayer*)GetUnderLayer())->GetUnderLayer())->SetOpenedAdapterObject(((CNILayer*)((CEthernetLayer*)GetUnderLayer())->GetUnderLayer())->adapterOpenedIndexList[adapter_number]);
+}
+
 
 list<CARPLayer::ARP_CACHE_RECORD> CARPLayer::getARPCacheTable(void)
 {

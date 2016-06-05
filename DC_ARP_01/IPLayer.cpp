@@ -185,7 +185,7 @@ BOOL CIPLayer::Receive(unsigned char* ppayload)
 				{
 					if((*device_iter).device_number == (*iter).device_number)
 					{
-						setProtocolStack((*device_iter).device_ip, (*device_iter).device_mac);
+						setProtocolStack((*device_iter).device_ip, (*device_iter).device_mac, (*device_iter).device_number);
 						break;
 					}
 				}
@@ -231,9 +231,10 @@ BOOL CIPLayer::Receive(unsigned char* ppayload)
 	}
 }
 
-void CIPLayer::setProtocolStack(unsigned char* ipAddress, unsigned char* macAddress)
+void CIPLayer::setProtocolStack(unsigned char* ipAddress, unsigned char* macAddress, int adapter_number)
 {
 	((CARPLayer*)GetUnderLayer())->setSenderIPAddress(ipAddress);
 	((CARPLayer*)GetUnderLayer())->setSenderHardwareAddress(macAddress);
 	((CARPLayer*)GetUnderLayer())->setEthernetHardwareAddress(macAddress);
+	((CARPLayer*)GetUnderLayer())->setNICard(adapter_number);
 }
