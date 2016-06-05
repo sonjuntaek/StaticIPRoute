@@ -82,6 +82,8 @@ void CDC_ARP_01Dlg::DoDataExchange(CDataExchange* pDX)
 	DDX_Control(pDX, IDC_ARP_CACHE_TABLE_LIST, m_ArpTable);
 	DDX_Control(pDX, IDC_PROXY_ARP_ENTRY_LIST, m_proxyARPEntry);
 	DDX_Control(pDX, IDC_STATIC_ROUTING_TABLE, m_staticIPTable);
+	DDX_Control(pDX, IDC_PING_SEND, pingSend);
+	DDX_Control(pDX, IDC_PING_TARGET, ping_target_ip);
 }
 
 BEGIN_MESSAGE_MAP(CDC_ARP_01Dlg, CDialogEx)
@@ -91,10 +93,8 @@ BEGIN_MESSAGE_MAP(CDC_ARP_01Dlg, CDialogEx)
 
 	ON_BN_CLICKED(IDC_ARP_ITEM_DELETE_BUTTON, &CDC_ARP_01Dlg::OnBnClickedArpItemDeleteButton)
 	ON_BN_CLICKED(IDC_ARP_ALL_DELETE_BUTTON, &CDC_ARP_01Dlg::OnBnClickedArpAllDeleteButton)
-	ON_BN_CLICKED(IDC_ARP_SEND_BUTTON, OnSendMessage)
+	ON_BN_CLICKED(IDC_PING_SEND, OnSendMessage)
 	ON_BN_CLICKED(IDC_WINDOW_OK_BUTTON, &CDC_ARP_01Dlg::OnBnClickedWindowOkButton)
-	ON_BN_CLICKED(IDC_ARP_SETTING_BUTTON, OnButtonAddrSet)
-	ON_CBN_SELCHANGE(IDC_NICARD_COMBO, OnComboEnetAddr)
 
 	ON_WM_TIMER()
 	ON_BN_CLICKED(IDC_PROXY_ADD_BUTTON, &CDC_ARP_01Dlg::OnBnClickedProxyAddButton)
@@ -228,76 +228,23 @@ void CDC_ARP_01Dlg::OnSendMessage()
 	unsigned char dst_ip[4];
 	// TODO: Add your control notification handler code here
 	UpdateData( TRUE ) ;
-
+	
 	SetTimer(1,3000,NULL);// file transfer 할 때 응답이 없으면 오류메세지 띄울 때 사용된건데 사실상 여기선 필요 없음.
-	m_unDstIPAddr.GetAddress(dst_ip[0],dst_ip[1],dst_ip[2],dst_ip[3]);
+	ping_target_ip.GetAddress(dst_ip[0],dst_ip[1],dst_ip[2],dst_ip[3]);
 	m_ARP->setTargetIPAddress(dst_ip);
 	
 	SendData( ) ;
 	
 	UpdateData( FALSE ) ;
 }
-void CDC_ARP_01Dlg::OnButtonAddrSet() //세팅버튼 눌렀을 때.
-{
-	// TODO: Add your control notification handler code here
-	UpdateData( TRUE ) ;
-	unsigned char src_ip[4];
-	unsigned char dst_ip[4];
-	unsigned char src_mac[12];
-	unsigned char dst_mac[12];
-
-
-	if ( !m_unDstEnetAddr || 
-		!m_unSrcEnetAddr  )
-	{
-		MessageBox( "주소를 설정 오류발생", 
-			"경고", 
-			MB_OK | MB_ICONSTOP ) ;
-
-		return ;
-	}
-	//setting button 눌렀을 때는 자신의 ip, mac 상대방의 ip가 설정됨.
-	if ( m_bSendReady ){
-		SetDlgState( IPC_ADDR_RESET ) ;
-		SetDlgState( IPC_INITIALIZING ) ;
-	}
-	else{
-		m_unSrcIPAddr.GetAddress(src_ip[0],src_ip[1],src_ip[2],src_ip[3]);
-		m_unDstIPAddr.GetAddress(dst_ip[0],dst_ip[1],dst_ip[2],dst_ip[3]);
-
-		m_IP->SetSrcIPAddress(src_ip);
-		m_ARP->setSenderIPAddress(src_ip);
-
-		sscanf(m_unSrcEnetAddr, "%02x%02x%02x%02x%02x%02x", &src_mac[0],&src_mac[1],&src_mac[2],&src_mac[3],&src_mac[4],&src_mac[5]);
-		sscanf(m_unDstEnetAddr, "%02x%02x%02x%02x%02x%02x", &dst_mac[0],&dst_mac[1],&dst_mac[2],&dst_mac[3],&dst_mac[4],&dst_mac[5]);
-		AfxMessageBox(m_unSrcEnetAddr);
-
-		m_ETH->SetEnetSrcAddress(src_mac);
-		m_ETH->SetEnetDstAddress(dst_mac);
-		m_ARP->setSenderHardwareAddress(src_mac);
-
-		int nIndex = m_ComboEnetName.GetCurSel();
-		m_NI->SetAdapterNumber(nIndex);
-
-		m_NI->PacketStartDriver();
-
-		SetDlgState( IPC_ADDR_SET ) ;
-		SetDlgState( IPC_READYTOSEND ) ;		
-	}
-
-	m_bSendReady = !m_bSendReady ;
-}
 
 void CDC_ARP_01Dlg::SendData()
 {
-
 	m_stMessage.SetString("Hello World!");
 	int nlength = m_stMessage.GetLength();
 	unsigned char* ppayload = new unsigned char[nlength+1];
 	memcpy(ppayload,(unsigned char*)(LPCTSTR)m_stMessage,nlength);
 	ppayload[nlength] = '\0';
-	
-	m_ARP->setSenderIPAddress((unsigned char*)srcIPAddrString);
 
 	m_APP->Send(ppayload,m_stMessage.GetLength());
 }
@@ -314,6 +261,7 @@ BOOL CDC_ARP_01Dlg::Receive(unsigned char *ppayload)
 
 	KillTimer(1);
 	
+	AfxMessageBox("Ping Received!");
 	return TRUE ;
 }
 
@@ -338,36 +286,25 @@ void CDC_ARP_01Dlg::SetDlgState(int state) // 다이얼로그 초기화 부분
 	{
 	case IPC_INITIALIZING : // 첫 화면 세팅
 		pWindowOkButton->EnableWindow( TRUE );
-		//pGratuitousARPAddress->EnableWindow ( TRUE );
 		m_proxyARPEntry.EnableWindow( FALSE );
 		m_ArpTable.EnableWindow( FALSE ) ;
 		break ;
 
 	case IPC_READYTOSEND : // Send 버튼을 눌렀을 때 세팅
-		//pGratuitousARPAddress->EnableWindow ( TRUE );
 		m_proxyARPEntry.EnableWindow( TRUE );
-
-		DWORD dwIP;
-		//텍스트에 적힌 값 갖고오는거.
-
 		m_ArpTable.EnableWindow( TRUE ) ;
 		break ;
 
 	case IPC_WAITFORACK :	break ;
 	case IPC_ERROR :		break ;
 	case IPC_ADDR_SET :	// Setting 버튼을 눌렀을 때
-		
-		pEnetNameCombo->EnableWindow( FALSE );
-
 		m_NI->m_thrdSwitch = TRUE;
 		break;
 		
 	case IPC_ADDR_RESET : // Reset 버튼을 눌렀을 때
-		
-		pEnetNameCombo->EnableWindow( TRUE );
 		m_NI->m_thrdSwitch = FALSE;
 		break ;
-		
+		/*
 	case CFT_COMBO_SET :
 		for(i=0;i<NI_COUNT_NIC;i++){
 			if(!m_NI->GetAdapterObject(i))
@@ -388,6 +325,7 @@ void CDC_ARP_01Dlg::SetDlgState(int state) // 다이얼로그 초기화 부분
 			m_unSrcEnetAddr.Format("%.2X%.2X%.2X%.2X%.2X%.2X",OidData->Data[0],OidData->Data[1],OidData->Data[2],OidData->Data[3],OidData->Data[4],OidData->Data[5]) ;
 		}
 		break;
+	*/
 	}
 
 	UpdateData( FALSE ) ;
@@ -459,6 +397,7 @@ void CDC_ARP_01Dlg::OnTimer(UINT nIDEvent)
 		break;
 		   }
 	}
+
 
 	CDialog::OnTimer(nIDEvent);
 }

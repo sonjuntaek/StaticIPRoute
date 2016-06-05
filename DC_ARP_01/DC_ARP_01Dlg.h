@@ -110,4 +110,7 @@ private:
 
 	UINT			m_wParam;
 	DWORD			m_lParam;
+public:
+	CButton pingSend;
+	CIPAddressCtrl ping_target_ip;
 };
