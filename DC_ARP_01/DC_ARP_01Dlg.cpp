@@ -648,7 +648,7 @@ void CDC_ARP_01Dlg::readAndWriteTableDataFromFile(ifstream& inFile)
 		inFile >> interface_info;
 		inFile >> metric;
 		inFile >> ip_data; dlg[i].netmask_length = ip_data;
-		inFile >> ip_data; nIndex = ip_data;
+		inFile >> ip_data; dlg[i].device_number = ip_data;
 		
 		char c;
 		inFile.get(c);
@@ -680,7 +680,7 @@ void CDC_ARP_01Dlg::readAndWriteTableDataFromFile(ifstream& inFile)
 		list<CIPLayer::INTERFACE_STRUCT>::iterator iter = device_list.begin();
 		for(; iter != device_list.end(); iter++)
 		{
-			if((*iter).device_number == nIndex)
+			if((*iter).device_number == dlg[i].device_number)
 			{
 				isDeviceNotOpened = FALSE;
 				break;
@@ -688,20 +688,18 @@ void CDC_ARP_01Dlg::readAndWriteTableDataFromFile(ifstream& inFile)
 		}
 		if(isDeviceNotOpened == TRUE)
 		{
-			m_NI->SetAdapterNumber(nIndex);
+			m_NI->SetAdapterNumber(dlg[i].device_number);
 			m_NI->PacketStartDriver();
 			CIPLayer::INTERFACE_STRUCT newDevice;
-			unsigned char dst_mac[12];
 			memset(newDevice.device_ip, 0, 4);
 			memset(newDevice.device_mac, 0, 6);
 			memcpy(newDevice.device_ip, dlg[i].own_ip, 4);
-			memcpy(newDevice.device_mac, m_NI->getNICAddress(nIndex), 6);
-			
-			memcpy(newDevice.device_mac, dst_mac, 6);
+			memcpy(newDevice.device_netmask, dlg[i].own_netmask, 4);
+			memcpy(newDevice.device_mac, m_NI->getNICAddress(dlg[i].device_number)->Data, 6);
+			newDevice.device_number = dlg[i].device_number;
 			device_list.push_back(newDevice);
 		}	
-		
-		newRecord.device_number = nIndex;
+		newRecord.device_number = dlg[i].device_number;
 
 		levItem.iSubItem = 0;
 		sprintf(szText,"%s"," ");
