@@ -84,6 +84,7 @@ void CDC_ARP_01Dlg::DoDataExchange(CDataExchange* pDX)
 	DDX_Control(pDX, IDC_STATIC_ROUTING_TABLE, m_staticIPTable);
 	DDX_Control(pDX, IDC_PING_SEND, pingSend);
 	DDX_Control(pDX, IDC_PING_TARGET, ping_target_ip);
+	DDX_Control(pDX, IDC_PING_SOURCE, ping_src_i);
 }
 
 BEGIN_MESSAGE_MAP(CDC_ARP_01Dlg, CDialogEx)
@@ -102,6 +103,7 @@ BEGIN_MESSAGE_MAP(CDC_ARP_01Dlg, CDialogEx)
 	ON_BN_CLICKED(IDC_WINDOW_CLOSE_BUTTON, &CDC_ARP_01Dlg::OnBnClickedWindowCloseButton)
 	ON_BN_CLICKED(IDC_ROUTING_ADD_BUTTON, &CDC_ARP_01Dlg::OnBnClickedRoutingAddButton)
 	ON_BN_CLICKED(IDC_ROUTING_DELETE_BUTTON, &CDC_ARP_01Dlg::OnBnClickedRoutingDeleteButton)
+	ON_BN_CLICKED(IDC_PING_SRC_ADDRESS, &CDC_ARP_01Dlg::OnBnClickedPingSrcAddress)
 END_MESSAGE_MAP()
 
 
@@ -245,6 +247,20 @@ void CDC_ARP_01Dlg::SendData()
 	unsigned char* ppayload = new unsigned char[nlength+1];
 	memcpy(ppayload,(unsigned char*)(LPCTSTR)m_stMessage,nlength);
 	ppayload[nlength] = '\0';
+
+	list<CIPLayer::INTERFACE_STRUCT>::iterator iter = device_list.begin();
+	for(; iter != device_list.end(); iter++)
+	{
+		if(memcmp((*iter).device_ip, srcIPAddrString, 4) == 0)
+		{
+			m_ARP->setSenderHardwareAddress((*iter).device_mac);
+			m_ARP->setSenderIPAddress((*iter).device_ip);
+			m_ARP->setEthernetHardwareAddress((*iter).device_mac);
+			m_IP->SetSrcIPAddress((*iter).device_ip);
+			m_NI->SetAdapterNumber((*iter).device_number);
+			break;
+		}
+	}
 
 	m_APP->Send(ppayload,m_stMessage.GetLength());
 }
@@ -869,4 +885,13 @@ void CDC_ARP_01Dlg::OnBnClickedRoutingDeleteButton()
 		m_staticIPTable.DeleteItem(index);
 		m_proxyARPEntry.UpdateData(TRUE);
 	}
+}
+
+
+void CDC_ARP_01Dlg::OnBnClickedPingSrcAddress()
+{
+	unsigned char src_ip[4];
+	ping_src_i.GetAddress(src_ip[0],src_ip[1],src_ip[2],src_ip[3]);
+	memcpy(srcIPAddrString, src_ip, 4);
+	m_ARP->setSenderIPAddress(src_ip);
 }

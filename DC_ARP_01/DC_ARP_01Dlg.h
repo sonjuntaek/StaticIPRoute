@@ -113,4 +113,6 @@ private:
 public:
 	CButton pingSend;
 	CIPAddressCtrl ping_target_ip;
+	CIPAddressCtrl ping_src_i;
+	afx_msg void OnBnClickedPingSrcAddress();
 };
