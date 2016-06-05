@@ -34,6 +34,7 @@ void CStaticRoutingDlg::DoDataExchange(CDataExchange* pDX)
 	DDX_Control(pDX, IDC_STATIC_ROUTE_DEVICE, RouteInterfaceCombo);
 	DDX_Control(pDX, IDC_METRIC_EDIT_CONTROL, RouteMetric);
 	DDX_Control(pDX, IDC_STATIC_ROUTE_SOURCE_IP, RouteSrcIPAddress);
+	DDX_Control(pDX, IDC_STATIC_ROUTE_SOURCE_NETMASK, RouteSrcNetmask);
 }
 
 
@@ -42,6 +43,7 @@ BEGIN_MESSAGE_MAP(CStaticRoutingDlg, CDialogEx)
 	ON_BN_CLICKED(IDCANCEL, &CStaticRoutingDlg::OnBnClickedCancel)
 	ON_NOTIFY(IPN_FIELDCHANGED, IDC_STATIC_ROUTE_DST_IP, &CStaticRoutingDlg::OnIpnFieldchangedStaticRouteDstIp)
 	ON_CBN_SELCHANGE(IDC_STATIC_ROUTE_DEVICE, OnComboEnetAddr)
+	ON_NOTIFY(IPN_FIELDCHANGED, IDC_STATIC_ROUTE_SOURCE_IP, &CStaticRoutingDlg::OnIpnFieldchangedStaticRouteSourceIp)
 END_MESSAGE_MAP()
 
 
@@ -188,5 +190,30 @@ void CStaticRoutingDlg::OnIpnFieldchangedStaticRouteDstIp(NMHDR *pNMHDR, LRESULT
 		netmaskLength = 8;
 	}
 
+	*pResult = 0;
+}
+
+void CStaticRoutingDlg::OnIpnFieldchangedStaticRouteSourceIp(NMHDR *pNMHDR, LRESULT *pResult)
+{
+	LPNMIPADDRESS pIPAddr = reinterpret_cast<LPNMIPADDRESS>(pNMHDR);
+
+	RouteSrcIPAddress.GetAddress(srcIPAddress[0],srcIPAddress[1],srcIPAddress[2],srcIPAddress[3]);
+	
+	int firstByteVerified = VERIFY_BYTE(srcIPAddress[0]);
+	int secondByteVerified = VERIFY_BYTE(srcIPAddress[1]);
+	int thirdByteVerified = VERIFY_BYTE(srcIPAddress[2]);
+
+	if ((firstByteVerified > 0)  && (secondByteVerified > 0) && (thirdByteVerified > 0))
+	{
+		RouteSrcNetmask.SetAddress(FULL_BYTE, FULL_BYTE, FULL_BYTE, 0);
+	}
+	else if((firstByteVerified > 0)  && (secondByteVerified > 0))
+	{
+		RouteSrcNetmask.SetAddress(FULL_BYTE, FULL_BYTE, 0, 0);
+	}
+	else if((firstByteVerified > 0))
+	{
+		RouteSrcNetmask.SetAddress(FULL_BYTE, 0, 0, 0);
+	}
 	*pResult = 0;
 }

@@ -34,10 +34,12 @@ public:
 	void SetSrcIPAddress(unsigned char* src_ip);
 	void SetDstIPAddress(unsigned char* dst_ip);
 	void SetFragOff(unsigned short fragoff);
-
+	void SetSrcNetmask(unsigned char* src_netmask);
+	void IPAddressMasking(unsigned char* dst_ip, unsigned char* src_ip, unsigned char* mask_ip);
 	BOOL Send(unsigned char* ppayload, int nlength);
 	BOOL Receive(unsigned char* ppayload);
 	void setProtocolStack(unsigned char* ipAddress, unsigned char* macAddress);
+
 
 	typedef struct _IPLayer_HEADER {
 		unsigned char ip_verlen;	// ip version		(1byte)
@@ -59,6 +61,7 @@ public:
 		unsigned char		own_ip[4];
 		unsigned char		netmask_ip[4];
 		unsigned char		gateway_ip[4];
+		unsigned char		own_netmask[4];
 		unsigned char		flag;
 		unsigned char		netmask_length;
 		CString				flag_string;
@@ -75,6 +78,7 @@ public:
 	{
 		unsigned char		device_number;
 		unsigned char		device_ip[4];
+		unsigned char		device_netmask[4];
 		unsigned char		device_mac[6];
 	}INTERFACE_STRUCT;
 	
@@ -82,6 +86,8 @@ public:
 
 	list<INTERFACE_STRUCT> device_list;
 
+	unsigned char my_netmask[4];
+	unsigned char default_netmask[4];
 protected:
 	IPLayer_HEADER					m_sHeader ;
 };

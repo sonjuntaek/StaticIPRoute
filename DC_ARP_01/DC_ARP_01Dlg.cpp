@@ -149,7 +149,7 @@ BOOL CDC_ARP_01Dlg::OnInitDialog()
 	}	
 
 	ifstream inFile;
-	inFile.open("input4.txt");
+	inFile.open("input1.txt");
 	setRoutingTable(inFile);
 	inFile.close();
 
@@ -234,6 +234,7 @@ void CDC_ARP_01Dlg::OnSendMessage()
 	SetTimer(1,3000,NULL);// file transfer 할 때 응답이 없으면 오류메세지 띄울 때 사용된건데 사실상 여기선 필요 없음.
 	ping_target_ip.GetAddress(dst_ip[0],dst_ip[1],dst_ip[2],dst_ip[3]);
 	m_ARP->setTargetIPAddress(dst_ip);
+	m_IP->SetDstIPAddress(dst_ip);
 	
 	SendData( ) ;
 	
@@ -242,7 +243,7 @@ void CDC_ARP_01Dlg::OnSendMessage()
 
 void CDC_ARP_01Dlg::SendData()
 {
-	m_stMessage.SetString("Hello World!");
+	m_stMessage.SetString("Ping!");
 	int nlength = m_stMessage.GetLength();
 	unsigned char* ppayload = new unsigned char[nlength+1];
 	memcpy(ppayload,(unsigned char*)(LPCTSTR)m_stMessage,nlength);
@@ -257,6 +258,7 @@ void CDC_ARP_01Dlg::SendData()
 			m_ARP->setSenderIPAddress((*iter).device_ip);
 			m_ARP->setEthernetHardwareAddress((*iter).device_mac);
 			m_IP->SetSrcIPAddress((*iter).device_ip);
+			m_IP->SetSrcNetmask((*iter).device_netmask);
 			m_NI->SetAdapterNumber((*iter).device_number);
 			break;
 		}
@@ -636,6 +638,11 @@ void CDC_ARP_01Dlg::readAndWriteTableDataFromFile(ifstream& inFile)
 		inFile >> ip_data; dlg[i].own_ip[2] = ip_data;
 		inFile >> ip_data; dlg[i].own_ip[3] = ip_data;
 
+		inFile >> ip_data; dlg[i].own_netmask[0] = ip_data;
+		inFile >> ip_data; dlg[i].own_netmask[1] = ip_data;
+		inFile >> ip_data; dlg[i].own_netmask[2] = ip_data;
+		inFile >> ip_data; dlg[i].own_netmask[3] = ip_data;
+
 		inFile >> ip_data; dlg[i].flag = ip_data;
 		inFile >> flag_string;
 		inFile >> interface_info;
@@ -775,6 +782,7 @@ void CDC_ARP_01Dlg::OnBnClickedRoutingAddButton()
 		memcpy(newRecord.netmask_ip,dlg.netmaskIPAddress,4);
 		memcpy(newRecord.gateway_ip,dlg.gatewayIPAddress,4);
 		memcpy(newRecord.own_ip,dlg.srcIPAddress,4);
+		memcpy(newRecord.own_netmask,dlg.srcNetmask,4);
 		newRecord.flag = dlg.flag;
 		newRecord.flag_string = dlg.flag_string;
 		newRecord.interface_info = dlg.interface_info;

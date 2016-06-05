@@ -39,6 +39,7 @@ public:
 	unsigned char		selectedRow;
 	
 	unsigned char		srcIPAddress[4];
+	unsigned char		srcNetmask[4];
 	unsigned char		dstIPAddress[4];
 	unsigned char		netmaskIPAddress[4];
 	unsigned char		gatewayIPAddress[4];
@@ -55,4 +56,6 @@ public:
 	CEdit RouteMetric;
 	afx_msg void OnIpnFieldchangedStaticRouteDstIp(NMHDR *pNMHDR, LRESULT *pResult);
 	void OnComboEnetAddr();
+	afx_msg void OnIpnFieldchangedStaticRouteSourceIp(NMHDR *pNMHDR, LRESULT *pResult);
+	CIPAddressCtrl RouteSrcNetmask;
 };

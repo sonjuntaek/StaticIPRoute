@@ -40,6 +40,7 @@ void CIPLayer::ResetHeader()
 	memset( m_sHeader.ip_src, 0, 4);
 	memset( m_sHeader.ip_dst, 0, 4);
 	memset( m_sHeader.ip_data, 0, IP_DATA_SIZE);
+	memset(default_netmask, 0, 4);
 }
 
 void CIPLayer::SetSrcIPAddress(unsigned char* src_ip)
@@ -52,9 +53,22 @@ void CIPLayer::SetDstIPAddress(unsigned char* dst_ip)
 	memcpy( m_sHeader.ip_dst, dst_ip, 4);
 }
 
+void CIPLayer::SetSrcNetmask(unsigned char* src_netmask)
+{
+	memcpy( my_netmask, src_netmask, 4);
+}
+
 void CIPLayer::SetFragOff(unsigned short fragoff)
 {
 	m_sHeader.ip_fragoff = fragoff;
+}
+
+void CIPLayer::IPAddressMasking(unsigned char* dst_ip, unsigned char* src_ip, unsigned char* mask_ip)
+{
+	dst_ip[0] = src_ip[0] & mask_ip[0];
+	dst_ip[1] = src_ip[1] & mask_ip[1];	
+	dst_ip[2] = src_ip[2] & mask_ip[2];
+	dst_ip[3] = src_ip[3] & mask_ip[3];
 }
 
 BOOL CIPLayer::Send(unsigned char* ppayload, int nlength)
@@ -63,8 +77,33 @@ BOOL CIPLayer::Send(unsigned char* ppayload, int nlength)
 	
 	BOOL bSuccess = FALSE ;
 	m_sHeader.ip_tos = 0x0;
-	bSuccess = mp_UnderLayer->Send((unsigned char*)&m_sHeader,nlength+IP_HEADER_SIZE);
 
+	unsigned char my_address[4];
+	unsigned char opposite_address[4];
+	
+	IPAddressMasking(my_address, m_sHeader.ip_src, my_netmask);
+	IPAddressMasking(opposite_address, m_sHeader.ip_dst, my_netmask);
+
+	if (memcmp(my_address, opposite_address, 4) != 0)
+	{
+		list<STATIC_IP_ROUTING_RECORD>::iterator iter = routingTable.begin();
+		for(; iter != routingTable.end(); iter++)
+		{
+			if(memcmp((*iter).netmask_ip, default_netmask, 4))
+			{
+				((CARPLayer*)GetUnderLayer())->next_ethernet_type = ETHER_PROTO_TYPE_ARP;
+				((CARPLayer*)GetUnderLayer())->setTargetIPAddress((*iter).gateway_ip);
+				bSuccess = mp_UnderLayer->Send(ppayload,sizeof(ppayload));
+
+				if(bSuccess)
+				{
+					((CARPLayer*)GetUnderLayer())->next_ethernet_type = ETHER_PROTO_TYPE_IP;
+					((CARPLayer*)GetUnderLayer())->setTargetIPAddress(m_sHeader.ip_dst);
+					bSuccess = mp_UnderLayer->Send(ppayload,sizeof(ppayload));
+				}
+			}
+		}
+	}
 	return bSuccess;
 }
 
@@ -99,11 +138,8 @@ BOOL CIPLayer::Receive(unsigned char* ppayload)
 		{
 
 			unsigned char maskedData[4];
-			maskedData[0] = (*iter).netmask_ip[0] & pFrame->ip_dst[0];
-			maskedData[1] = (*iter).netmask_ip[1] & pFrame->ip_dst[1];
-			maskedData[2] = (*iter).netmask_ip[2] & pFrame->ip_dst[2];
-			maskedData[3] = (*iter).netmask_ip[3] & pFrame->ip_dst[3];
-
+			IPAddressMasking(maskedData, pFrame->ip_dst, (*iter).netmask_ip);
+			
 			//This record has same networkID with received packet's ip destination data.
 			if(memcmp((*iter).destination_ip, maskedData, 4) == 0)
 			{
