@@ -6,6 +6,7 @@
 #include "DC_ARP_01.h"
 #include "NILayer.h"
 #include "EthernetLayer.h"
+#include "IPLayer.h"
 
 #ifdef _DEBUG
 #undef THIS_FILE
@@ -133,6 +134,7 @@ BOOL CNILayer::Receive( unsigned char* ppayload, int adapter_number )
 	}
 	((CEthernetLayer*)GetUpperLayer(0))->setNICCard(adapter_number);
 
+	CIPLayer::PIPLayer_HEADER pFrame = (CIPLayer::PIPLayer_HEADER) ppayload;
 	bSuccess = mp_aUpperLayer[0]->Receive(ppayload);
 	return bSuccess;
 }
@@ -159,12 +161,11 @@ UINT CNILayer::ReadingThread(LPVOID pParam)
 		else if(result == 1)
 		{
 			pNI->Receive((u_char*)pkt_data, i % pNI->adapterOpenedSize);
+			i = 0;
 		}
 		else if(result < 0)
 		{}
 		i++;
-		if(i == 20)
-			i = 0;
 	}
 	return 0;
 	///////////////////////////////////////////////////////////////////////

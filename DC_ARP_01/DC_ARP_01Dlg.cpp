@@ -265,11 +265,13 @@ void CDC_ARP_01Dlg::SendData()
 		}
 	}
 
-	m_APP->Send(ppayload,m_stMessage.GetLength());
+	m_APP->Send(ppayload,50);
 }
 
 BOOL CDC_ARP_01Dlg::Receive(unsigned char *ppayload)
 {
+	
+	AfxMessageBox("Ping Received!");
 	CString Msg;
 	int len_ppayload = strlen((char *)ppayload); 
 
@@ -280,7 +282,6 @@ BOOL CDC_ARP_01Dlg::Receive(unsigned char *ppayload)
 
 	KillTimer(1);
 	
-	AfxMessageBox("Ping Received!");
 	return TRUE ;
 }
 

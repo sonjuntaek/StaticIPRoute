@@ -26,6 +26,7 @@ void CARPLayer::ResetHeader()
 	memset(arpHeader.arpTargetIPAddress, 0, 4);
 	memset(ownMACAddress, 0, 6);
 	memset(ownIPAddress, 0, 4);
+	memset(targetMACAddress, 0, 6);
 }
 
 
@@ -78,13 +79,13 @@ void CARPLayer::setNICard(int adapter_number)
 
 unsigned char* CARPLayer::getHardwareAddressByGivenIPAddress(unsigned char* ipAddress)
 {
-	unsigned char* return_value;
+	unsigned char return_value[6];
 	list<ARP_CACHE_RECORD>::iterator cacheIter = arpCacheTable.begin();
 	for(cacheIter; cacheIter != arpCacheTable.end(); cacheIter++)// gratuitous 아니라면, cache에 있는 만큼 for구문돌림.
 	{
 		if(memcmp((*cacheIter).ipAddress, ipAddress, 4) == 0) //보내려는 ip와 같은 ip가 있다면 
 		{
-			return_value = (*cacheIter).ethernetAddress;
+			memcpy(return_value,(*cacheIter).ethernetAddress,6);
 			break;
 		}
 	}
@@ -104,7 +105,8 @@ void CARPLayer::setAdapter(CString adapter)
 BOOL CARPLayer::Send(unsigned char* ppayload, int length)
 {
 		memcpy( arpHeader.arpData, ppayload, length );
-
+		
+		BOOL bSuccess = FALSE ;
 		BOOL isCacheAvailable = FALSE;	//캐시 이용가능한지.
 		BOOL isGratuitousPacket = FALSE;	//gratuitous 발생 했는지.
 		list<ARP_CACHE_RECORD>::iterator cacheIter = arpCacheTable.begin();
@@ -135,9 +137,7 @@ BOOL CARPLayer::Send(unsigned char* ppayload, int length)
 			((CEthernetLayer*)GetUnderLayer())->SetEnetDstAddress((*cacheIter).ethernetAddress);// ethernet layer의 mac 주소도 다시 설정.
 
 		}
-		else if(isGratuitousPacket == TRUE)
-		{
-		}
+
 		//it is not valid record
 		else // 캐시도 없고, gratuitous도 아니고.
 		{
@@ -155,28 +155,28 @@ BOOL CARPLayer::Send(unsigned char* ppayload, int length)
 
 			arpCacheTable.push_back(newRecord);
 		}
-
-		// ----정리---
-		// 1. Gratuitous가 맞다면, 그냥 아무 작업 하지 않고, 패킷 만들어서 보냄.
-		// 2. 캐시 이용가능하다면, 캐시에 있는 값으로 맥주소 설정해서 보냄.
-		// 3. 이용가능한 캐시 없고, gratitous가 아니라면 broadcast로 목적지 설정해서 보냄.
-
-		arpHeader.arpHardwareType = 0x0100;
-		arpHeader.arpProtocolType = 0x0008;
-		arpHeader.arpHardwareAddrSize = 0x6;
-		arpHeader.arpProtocolAddrSize = 0x4;
-		arpHeader.arpOperationType = ARP_REQUEST;
-		memcpy(arpHeader.arpSenderHardwareAddress, ownMACAddress, 6);
-		memcpy(arpHeader.arpSenderIPAddress, ownIPAddress, 4);
-		memcpy(arpHeader.arpTargetIPAddress, targetIPAddress, 4);
-	
-		BOOL bSuccess = FALSE ;
-
+		
 		if(next_ethernet_type == ETHER_PROTO_TYPE_IP)
-			bSuccess = mp_UnderLayer->Send((unsigned char*)&arpHeader.arpData,length+ARP_HEADER_SIZE);
+			bSuccess = mp_UnderLayer->Send((unsigned char*)ppayload, length);
 		else
-			bSuccess = mp_UnderLayer->Send((unsigned char*)&arpHeader,length+ARP_HEADER_SIZE);
+		{
+			// ----정리---
+			// 1. Gratuitous가 맞다면, 그냥 아무 작업 하지 않고, 패킷 만들어서 보냄.
+			// 2. 캐시 이용가능하다면, 캐시에 있는 값으로 맥주소 설정해서 보냄.
+			// 3. 이용가능한 캐시 없고, gratitous가 아니라면 broadcast로 목적지 설정해서 보냄.
 
+			arpHeader.arpHardwareType = 0x0100;
+			arpHeader.arpProtocolType = 0x0008;
+			arpHeader.arpHardwareAddrSize = 0x6;
+			arpHeader.arpProtocolAddrSize = 0x4;
+			arpHeader.arpOperationType = ARP_REQUEST;
+			memcpy(arpHeader.arpSenderHardwareAddress, ownMACAddress, 6);
+			memcpy(arpHeader.arpSenderIPAddress, ownIPAddress, 4);
+			memcpy(arpHeader.arpTargetIPAddress, targetIPAddress, 4);
+	
+
+			bSuccess = mp_UnderLayer->Send((unsigned char*)&arpHeader,length+ARP_HEADER_SIZE);
+		}
 		return bSuccess;
 }
 
@@ -230,8 +230,9 @@ BOOL CARPLayer::Receive(unsigned char* ppayload)
 	{
 		if(ntohs(pARPFrame->arpOperationType) == ntohs(ARP_REPLY)) // 받은 패킷이 reply라면
 		{
+			((CIPLayer*)GetUpperLayer(0))->semaphore = 1;
 			bSuccess = mp_aUpperLayer[0]->Receive((unsigned char*)pARPFrame->arpData); //상위계층으로 올려줌.
-			return TRUE;
+			return bSuccess;
 		}
 		if(ntohs(pARPFrame->arpOperationType) == ntohs(ARP_REQUEST))		//받은 패킷이 request라면
 		{

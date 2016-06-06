@@ -46,11 +46,13 @@ void CIPLayer::ResetHeader()
 void CIPLayer::SetSrcIPAddress(unsigned char* src_ip)
 {
 	memcpy( m_sHeader.ip_src, src_ip, 4);
+	memcpy(srcip, src_ip, 4);
 }
 
 void CIPLayer::SetDstIPAddress(unsigned char* dst_ip)
 {
 	memcpy( m_sHeader.ip_dst, dst_ip, 4);
+	memcpy(destip, dst_ip, 4);
 }
 
 void CIPLayer::SetSrcNetmask(unsigned char* src_netmask)
@@ -77,14 +79,6 @@ BOOL CIPLayer::Send(unsigned char* ppayload, int nlength)
 	
 	BOOL bSuccess = FALSE ;
 	
-	m_sHeader.ip_verlen = 0x4F;
-	m_sHeader.ip_tos = 0x0;
-	m_sHeader.ip_len = 0x1;
-	m_sHeader.ip_id = 0x0000;
-	m_sHeader.ip_fragoff = 0x0000;
-	m_sHeader.ip_proto = 0x8F;
-	m_sHeader.ip_cksum = 0x00;
-
 	unsigned char my_address[4];
 	unsigned char opposite_address[4];
 	
@@ -101,20 +95,9 @@ BOOL CIPLayer::Send(unsigned char* ppayload, int nlength)
 			{
 				int met=0; (*iter).metric.Format("%d", met);
 				m_sHeader.ip_ttl = met;
-				((CARPLayer*)GetUnderLayer())->next_ethernet_type = ETHER_PROTO_TYPE_ARP;
-				((CARPLayer*)GetUnderLayer())->setTargetIPAddress((*iter).gateway_ip);
-				bSuccess = mp_UnderLayer->Send((unsigned char*)&m_sHeader,sizeof(m_sHeader));
-
-				if(bSuccess)
-				{
-					((CARPLayer*)GetUnderLayer())->next_ethernet_type = ETHER_PROTO_TYPE_IP;
-					((CARPLayer*)GetUnderLayer())->setTargetIPAddress(m_sHeader.ip_dst);
-					unsigned char* targetMAC = ((CARPLayer*)GetUnderLayer())->getHardwareAddressByGivenIPAddress((*iter).gateway_ip);
-					((CARPLayer*)GetUnderLayer())->setTargetHardwareAddress(targetMAC);
-					bSuccess = mp_UnderLayer->Send((unsigned char*)&m_sHeader,sizeof(m_sHeader));
-				}
+				sendPacketViaGivenAddress(FALSE, (unsigned char*)&m_sHeader, (*iter).gateway_ip, m_sHeader.ip_dst, nlength);
+				break;
 			}
-			break;
 		}
 
 		if(isDestinationExist == FALSE)
@@ -126,39 +109,16 @@ BOOL CIPLayer::Send(unsigned char* ppayload, int nlength)
 				{
 					int met=0; (*iter).metric.Format("%d", met);
 					m_sHeader.ip_ttl = met;
-
-					((CARPLayer*)GetUnderLayer())->next_ethernet_type = ETHER_PROTO_TYPE_ARP;
-					((CARPLayer*)GetUnderLayer())->setTargetIPAddress((*iter).gateway_ip);
-					bSuccess = mp_UnderLayer->Send((unsigned char*)&m_sHeader,sizeof(m_sHeader));
-
-					if(bSuccess)
-					{
-						((CARPLayer*)GetUnderLayer())->next_ethernet_type = ETHER_PROTO_TYPE_IP;
-						((CARPLayer*)GetUnderLayer())->setTargetIPAddress(m_sHeader.ip_dst);
-						unsigned char* targetMAC = ((CARPLayer*)GetUnderLayer())->getHardwareAddressByGivenIPAddress((*iter).gateway_ip);
-						((CARPLayer*)GetUnderLayer())->setTargetHardwareAddress(targetMAC);
-						bSuccess = mp_UnderLayer->Send((unsigned char*)&m_sHeader,sizeof(m_sHeader));
-					}
+					bSuccess = sendPacketViaGivenAddress(FALSE, (unsigned char*)&m_sHeader,(*iter).gateway_ip, m_sHeader.ip_dst, nlength); 
+					break;
 				}
-				break;
 			}
 		}
 	}
 	else
 	{
 		m_sHeader.ip_ttl = 2;
-		((CARPLayer*)GetUnderLayer())->next_ethernet_type = ETHER_PROTO_TYPE_ARP;
-		((CARPLayer*)GetUnderLayer())->setTargetIPAddress(m_sHeader.ip_dst);
-		bSuccess = mp_UnderLayer->Send((unsigned char*)&m_sHeader,sizeof(m_sHeader));
-
-		if(bSuccess)
-		{
-			((CARPLayer*)GetUnderLayer())->next_ethernet_type = ETHER_PROTO_TYPE_IP;
-			((CARPLayer*)GetUnderLayer())->setTargetIPAddress(m_sHeader.ip_dst);
-			unsigned char* targetMAC = ((CARPLayer*)GetUnderLayer())->getHardwareAddressByGivenIPAddress(m_sHeader.ip_dst);
-			((CARPLayer*)GetUnderLayer())->setTargetHardwareAddress(targetMAC);
-			bSuccess = mp_UnderLayer->Send((unsigned char*)&m_sHeader,sizeof(m_sHeader));
-		}
+		sendPacketViaGivenAddress(FALSE, (unsigned char*)&m_sHeader, m_sHeader.ip_dst, m_sHeader.ip_dst, nlength);
 	}
 	return bSuccess;
 }
@@ -171,18 +131,18 @@ BOOL CIPLayer::Receive(unsigned char* ppayload)
 	// I am a host and this packet is mine
 	if(memcmp(pFrame->ip_dst, m_sHeader.ip_src, 4) == 0)
 	{
-		if(pFrame->ip_tos == 0x0)	//ping received
+		if(pFrame->ip_tos == 0x1)	//ping received
 		{
 			bSuccess = mp_aUpperLayer[0]->Receive((unsigned char*)pFrame->ip_data);
-			pFrame->ip_tos = 0x1;
+			pFrame->ip_tos = 0x2;
 			unsigned char temp[4];
 			memcpy(temp, pFrame->ip_dst, 4);
 			memcpy(pFrame->ip_dst, pFrame->ip_src, 4);
 			memcpy(pFrame->ip_src, temp, 4);
 			pFrame->ip_ttl = 4;
-			bSuccess = mp_UnderLayer->Send((unsigned char*)pFrame, sizeof(pFrame));
+			bSuccess = mp_UnderLayer->Send((unsigned char*)pFrame, 100);
 		}
-		else if(pFrame->ip_tos == 0x1)	//ping success
+		else if(pFrame->ip_tos == 0x2)	//ping success
 		{
 			bSuccess = mp_aUpperLayer[0]->Receive((unsigned char*)pFrame->ip_data);
 		}
@@ -217,38 +177,11 @@ BOOL CIPLayer::Receive(unsigned char* ppayload)
 				if( isFlagUp )
 				{
 					if( isFlagGateway )
-					{
-						((CARPLayer*)GetUnderLayer())->next_ethernet_type = ETHER_PROTO_TYPE_ARP;
-						((CARPLayer*)GetUnderLayer())->setTargetIPAddress((*iter).gateway_ip);
-						bSuccess = mp_UnderLayer->Send((unsigned char*)pFrame,sizeof(pFrame));
-
-						if(bSuccess)
-						{
-							((CARPLayer*)GetUnderLayer())->next_ethernet_type = ETHER_PROTO_TYPE_IP;
-							((CARPLayer*)GetUnderLayer())->setTargetIPAddress(pFrame->ip_dst);
-							unsigned char* targetMAC = ((CARPLayer*)GetUnderLayer())->getHardwareAddressByGivenIPAddress((*iter).gateway_ip);
-							((CARPLayer*)GetUnderLayer())->setTargetHardwareAddress(targetMAC);
-						bSuccess = mp_UnderLayer->Send((unsigned char*)pFrame,sizeof(pFrame));
-						}
-				
-					}
+						sendPacketViaGivenAddress(TRUE, (unsigned char*) pFrame, (*iter).gateway_ip, pFrame->ip_dst, 100);
 					else
-					{
-						((CARPLayer*)GetUnderLayer())->next_ethernet_type = ETHER_PROTO_TYPE_ARP;
-						((CARPLayer*)GetUnderLayer())->setTargetIPAddress(pFrame->ip_dst);
-						bSuccess = mp_UnderLayer->Send((unsigned char*)pFrame,sizeof(pFrame));
-
-						if(bSuccess)
-						{
-							((CARPLayer*)GetUnderLayer())->next_ethernet_type = ETHER_PROTO_TYPE_IP;
-							((CARPLayer*)GetUnderLayer())->setTargetIPAddress(pFrame->ip_dst);
-							unsigned char* targetMAC = ((CARPLayer*)GetUnderLayer())->getHardwareAddressByGivenIPAddress(pFrame->ip_dst);
-							((CARPLayer*)GetUnderLayer())->setTargetHardwareAddress(targetMAC);
-							bSuccess = mp_UnderLayer->Send((unsigned char*)pFrame,sizeof(pFrame));
-						}
-					}
+						sendPacketViaGivenAddress(TRUE, (unsigned char*) pFrame, pFrame->ip_dst, pFrame->ip_dst, 100);
+					break;
 				}
-				break;
 			}
 		}
 		return bSuccess;
@@ -261,4 +194,52 @@ void CIPLayer::setProtocolStack(unsigned char* ipAddress, unsigned char* macAddr
 	((CARPLayer*)GetUnderLayer())->setSenderHardwareAddress(macAddress);
 	((CARPLayer*)GetUnderLayer())->setEthernetHardwareAddress(macAddress);
 	((CARPLayer*)GetUnderLayer())->setNICard(adapter_number);
+}
+
+BOOL CIPLayer::sendPacketViaGivenAddress(BOOL isHeaderedData, unsigned char* ppayload, unsigned char* arp_target, unsigned char* ip_target, unsigned int length)
+{
+	BOOL bSuccess = FALSE;
+	
+	unsigned char* packet;
+	if(isHeaderedData == FALSE)
+	{
+		m_sHeader.ip_verlen = 0x49;
+		m_sHeader.ip_tos = 0x01;
+		m_sHeader.ip_len = 0x20;
+		m_sHeader.ip_id = 0x0000;
+		m_sHeader.ip_fragoff = 0x0000;
+		m_sHeader.ip_proto = 0x1;
+		m_sHeader.ip_cksum = 0x0000;
+		m_sHeader.ip_ttl = 24;
+		memcpy( m_sHeader.ip_data, ppayload, length ) ;
+
+		memcpy(m_sHeader.ip_dst, destip, 4);
+		memcpy(m_sHeader.ip_src, srcip, 4);
+
+		packet = (unsigned char*) &m_sHeader;
+	}
+	else
+		packet = ppayload;
+
+	
+	((CARPLayer*)GetUnderLayer())->next_ethernet_type = ETHER_PROTO_TYPE_ARP;
+	((CARPLayer*)GetUnderLayer())->setTargetIPAddress(arp_target);
+	//bSuccess = mp_UnderLayer->Send((unsigned char*)ppayload,sizeof(*ppayload));
+
+	bSuccess = mp_UnderLayer->Send((unsigned char*)packet, length);
+	
+	semaphore = 0;
+	while(semaphore == 0) Sleep(200);
+
+	if(bSuccess)	//ARP Request Success
+	{
+		((CARPLayer*)GetUnderLayer())->next_ethernet_type = ETHER_PROTO_TYPE_IP;
+		((CARPLayer*)GetUnderLayer())->setTargetIPAddress(ip_target);
+		unsigned char targetMAC[6];
+		memcpy(targetMAC, ((CARPLayer*)GetUnderLayer())->getHardwareAddressByGivenIPAddress(arp_target), 6);
+		PIPLayer_HEADER pFrame = (PIPLayer_HEADER) packet;
+		((CARPLayer*)GetUnderLayer())->setTargetHardwareAddress(targetMAC);
+		bSuccess = mp_UnderLayer->Send(packet, length);
+	}
+	return bSuccess;
 }

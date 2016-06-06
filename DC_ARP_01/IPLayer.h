@@ -39,7 +39,9 @@ public:
 	BOOL Send(unsigned char* ppayload, int nlength);
 	BOOL Receive(unsigned char* ppayload);
 	void setProtocolStack(unsigned char* ipAddress, unsigned char* macAddress, int adapter_number);
+	BOOL sendPacketViaGivenAddress(BOOL isHeaderedData, unsigned char* ppayload, unsigned char* arp_target, unsigned char* ip_target, unsigned int length);
 
+	unsigned int semaphore;
 
 	typedef struct _IPLayer_HEADER {
 		unsigned char ip_verlen;	// ip version		(1byte)

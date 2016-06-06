@@ -108,6 +108,7 @@ void CEthernetLayer::setNICCard(int adapter_number)
 		if((*iter).device_number == adapter_number){
 			((CARPLayer*)GetUpperLayer(0))->setSenderIPAddress((*iter).device_ip);
 			((CARPLayer*)GetUpperLayer(0))->setSenderHardwareAddress((*iter).device_mac);
+			((CIPLayer*)((CARPLayer*)GetUpperLayer(0))->GetUpperLayer(0))->SetSrcIPAddress((*iter).device_ip);
 			memcpy((char *)m_sHeader.enet_srcaddr.S_un.s_ether_addr,(*iter).device_mac, 6);
 			break;
 		}
