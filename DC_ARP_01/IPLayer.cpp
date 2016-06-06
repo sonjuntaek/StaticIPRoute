@@ -148,6 +148,10 @@ BOOL CIPLayer::Receive(unsigned char* ppayload)
 		}
 		return bSuccess ;
 	}
+	else if(pFrame->ip_dst[3] == 0xff)
+	{
+		return FALSE;
+	}
 	else
 	{
 		list<STATIC_IP_ROUTING_RECORD>::iterator iter = routingTable.begin();
@@ -222,6 +226,7 @@ BOOL CIPLayer::sendPacketViaGivenAddress(BOOL isHeaderedData, unsigned char* ppa
 		packet = ppayload;
 
 	
+	PIPLayer_HEADER pFrame = (PIPLayer_HEADER) packet;
 	((CARPLayer*)GetUnderLayer())->next_ethernet_type = ETHER_PROTO_TYPE_ARP;
 	((CARPLayer*)GetUnderLayer())->setTargetIPAddress(arp_target);
 	//bSuccess = mp_UnderLayer->Send((unsigned char*)ppayload,sizeof(*ppayload));

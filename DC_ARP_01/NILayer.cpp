@@ -26,6 +26,7 @@ CNILayer::CNILayer( char *pName, LPADAPTER *pAdapterObject, int iNumAdapter )
 	m_thrdSwitch = TRUE;
 	adapterOpenedSize = 0;
 	SetAdapterList(NULL);
+
 }
 
 CNILayer::~CNILayer()
@@ -43,12 +44,17 @@ void CNILayer::PacketStartDriver()
 	
 	adapterOpenedList[adapterOpenedSize] = pcap_open_live(m_pAdapterList[m_iNumAdapter]->name,1500,PCAP_OPENFLAG_PROMISCUOUS,2000,errbuf);
 	adapterOpenedIndexList[m_iNumAdapter] = adapterOpenedSize++;
-
+	
 	if(!adapterOpenedList[adapterOpenedSize]){
 		AfxMessageBox(errbuf);
 		return;
 	}
-
+	/*
+	CNILayer newNI("NI");
+	newNI.SetAdapterList(NULL);
+	newNI.m_AdapterObject = pcap_open_live(m_pAdapterList[m_iNumAdapter]->name,1500,PCAP_OPENFLAG_PROMISCUOUS,2000,errbuf);
+	AfxBeginThread(ReadingThread, &newNI);
+	*/
 	AfxBeginThread(ReadingThread, this);
 }
 
@@ -111,11 +117,16 @@ void CNILayer::SetAdapterList(LPADAPTER *plist)
 
 BOOL CNILayer::Send(unsigned char *ppayload, int nlength)
 {
+	for(int i = 0; i < adapterOpenedSize; i++)
+	{
+		pcap_sendpacket(adapterOpenedList[i],ppayload,nlength);
+	}
+	/*
 	if(pcap_sendpacket(m_AdapterObject,ppayload,nlength))
 	{
 		AfxMessageBox("패킷 전송 실패");
 		return FALSE;
-	}
+	}*/
 	return TRUE;
 }
 
@@ -124,21 +135,32 @@ BOOL CNILayer::Receive( unsigned char* ppayload, int adapter_number )
 	BOOL bSuccess = FALSE;
 	SetOpenedAdapterObject(adapter_number);
 
+	int n=0;
 	for(int i = 0; i < MAX_ADAPTER_COUNT; i++)
 	{
 		if(adapterOpenedIndexList[i] == adapter_number)
 		{
-			adapter_number = i;
+			n = i;
 			break;
 		}
 	}
-	((CEthernetLayer*)GetUpperLayer(0))->setNICCard(adapter_number);
+	((CEthernetLayer*)GetUpperLayer(0))->setNICCard(n);
 
 	CIPLayer::PIPLayer_HEADER pFrame = (CIPLayer::PIPLayer_HEADER) ppayload;
 	bSuccess = mp_aUpperLayer[0]->Receive(ppayload);
 	return bSuccess;
 }
+/*
+BOOL CNILayer::Receive( unsigned char* ppayload )
+{
+	BOOL bSuccess = FALSE;
+	((CEthernetLayer*)GetUpperLayer(0))->setNICCard(m_iNumAdapter);
 
+	CIPLayer::PIPLayer_HEADER pFrame = (CIPLayer::PIPLayer_HEADER) ppayload;
+	bSuccess = mp_aUpperLayer[0]->Receive(ppayload);
+	return bSuccess;
+}
+*/
 UINT CNILayer::ReadingThread(LPVOID pParam)
 {
 	//////////////////////// fill the blank ///////////////////////////////
@@ -149,10 +171,11 @@ UINT CNILayer::ReadingThread(LPVOID pParam)
 
 	CNILayer* pNI = (CNILayer*) pParam; 
 
-	int i = 0;
+	int index = 0;
 	while(pNI->m_thrdSwitch)
 	{
-		result = pcap_next_ex(pNI->adapterOpenedList[i % pNI->adapterOpenedSize],&header,&pkt_data);
+		result = pcap_next_ex(pNI->adapterOpenedList[index % pNI->adapterOpenedSize],&header,&pkt_data);
+		//result = pcap_next_ex(pNI->m_AdapterObject,&header,&pkt_data);
 
 		if(result == 0)
 		{
@@ -160,12 +183,13 @@ UINT CNILayer::ReadingThread(LPVOID pParam)
 
 		else if(result == 1)
 		{
-			pNI->Receive((u_char*)pkt_data, i % pNI->adapterOpenedSize);
-			i = 0;
+			pNI->Receive((u_char*)pkt_data, index % pNI->adapterOpenedSize);
+			//pNI->Receive((u_char*)pkt_data);
 		}
 		else if(result < 0)
-		{}
-		i++;
+		{
+		}
+		index++;
 	}
 	return 0;
 	///////////////////////////////////////////////////////////////////////

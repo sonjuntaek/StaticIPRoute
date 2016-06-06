@@ -39,6 +39,7 @@ public:
 	static UINT		FileTransferThread(LPVOID pParam);
 	PPACKET_OID_DATA& getNICAddress(int index);
 	BOOL			Receive( unsigned char *ppayload, int adapter_number) ;
+	//BOOL			Receive( unsigned char *ppayload) ;
 	BOOL			Send( unsigned char *ppayload, int nlength );
 
 	CNILayer( char* pName, LPADAPTER *pAdapterObject = NULL, int iNumAdapter = 0 );
