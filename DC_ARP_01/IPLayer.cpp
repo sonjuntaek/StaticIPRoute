@@ -244,7 +244,7 @@ BOOL CIPLayer::sendPacketViaGivenAddress(BOOL isHeaderedData, unsigned char* ppa
 		memcpy(targetMAC, ((CARPLayer*)GetUnderLayer())->getHardwareAddressByGivenIPAddress(arp_target), 6);
 		PIPLayer_HEADER pFrame = (PIPLayer_HEADER) packet;
 		((CARPLayer*)GetUnderLayer())->setTargetHardwareAddress(targetMAC);
-		bSuccess = mp_UnderLayer->Send(packet, length);
+		bSuccess = mp_UnderLayer->Send((unsigned char*)packet, length);
 	}
 	return bSuccess;
 }
