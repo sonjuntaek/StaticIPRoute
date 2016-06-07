@@ -107,7 +107,8 @@ BOOL CARPLayer::Send(unsigned char* ppayload, int length)
 		memcpy( arpHeader.arpData, ppayload, length );
 		
 		BOOL bSuccess = FALSE ;
-		BOOL isCacheAvailable = FALSE;	//캐시 이용가능한지.
+		BOOL isCacheSameIP = FALSE;	//캐시 이용가능한지.
+		BOOL isCacheSameMAC = FALSE;
 		BOOL isGratuitousPacket = FALSE;	//gratuitous 발생 했는지.
 		list<ARP_CACHE_RECORD>::iterator cacheIter = arpCacheTable.begin();
 		if(memcmp(targetIPAddress, ownIPAddress, 4) == 0)	// gratuitous인지 확인.
@@ -118,26 +119,28 @@ BOOL CARPLayer::Send(unsigned char* ppayload, int length)
 			{
 				if(memcmp((*cacheIter).ipAddress, targetIPAddress, 4) == 0) //보내려는 ip와 같은 ip가 있다면 
 				{
-					isCacheAvailable = TRUE;
+					isCacheSameIP = TRUE;
 					break;
 				}
 				if(memcmp((*cacheIter).ethernetAddress, targetMACAddress, 6) == 0)
 				{
-					isCacheAvailable = TRUE;
+					isCacheSameMAC = TRUE;
 					break;
 				}
 			}
 		}
 
 		//if cache is vaild and complete record
-		if((isCacheAvailable == TRUE) && ((*cacheIter).isComplete == TRUE))	// 캐시에 사용가능한 것이 존재한다면, 
+		if(((isCacheSameIP == TRUE) || (isCacheSameMAC == TRUE)) && ((*cacheIter).isComplete == TRUE))	// 캐시에 사용가능한 것이 존재한다면, 
 		{	
 			setTargetHardwareAddress((*cacheIter).ethernetAddress);	//캐시에 있다면 mac 주소를 알게 된 것이므로, 이 mac 주소로 재설정.
 			((CEthernetLayer*)GetUnderLayer())->m_sHeader.enet_type = next_ethernet_type;
 			((CEthernetLayer*)GetUnderLayer())->SetEnetDstAddress((*cacheIter).ethernetAddress);// ethernet layer의 mac 주소도 다시 설정.
 
 		}
-
+		else if(isCacheSameIP == TRUE)
+		{
+		}
 		//it is not valid record
 		else // 캐시도 없고, gratuitous도 아니고.
 		{

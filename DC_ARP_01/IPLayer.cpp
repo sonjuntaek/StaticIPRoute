@@ -95,7 +95,8 @@ BOOL CIPLayer::Send(unsigned char* ppayload, int nlength)
 			{
 				int met=0; (*iter).metric.Format("%d", met);
 				m_sHeader.ip_ttl = met;
-				sendPacketViaGivenAddress(FALSE, (unsigned char*)ppayload, NULL, (*iter).gateway_ip, m_sHeader.ip_dst, nlength);
+				bSuccess = sendPacketViaGivenAddress(FALSE, (unsigned char*)ppayload, NULL, (*iter).gateway_ip, m_sHeader.ip_dst, nlength);
+				isDestinationExist = TRUE;
 				break;
 			}
 		}
@@ -117,7 +118,7 @@ BOOL CIPLayer::Send(unsigned char* ppayload, int nlength)
 	}
 	else
 	{
-		m_sHeader.ip_ttl = 2;
+		m_sHeader.ip_ttl = 24;
 		sendPacketViaGivenAddress(FALSE, (unsigned char*)ppayload, NULL, m_sHeader.ip_dst, m_sHeader.ip_dst, nlength);
 	}
 	return bSuccess;
@@ -141,6 +142,7 @@ BOOL CIPLayer::Receive(unsigned char* ppayload)
 			memcpy(pFrame->ip_src, temp, 4);
 			pFrame->ip_ttl = 28;
 			pFrame->ip_tos = 0x2;
+
 			list<STATIC_IP_ROUTING_RECORD>::iterator iter = routingTable.begin();
 			unsigned char maskedData[4];
 			for(; iter != routingTable.end(); iter++)
@@ -157,10 +159,24 @@ BOOL CIPLayer::Receive(unsigned char* ppayload)
 							break;
 						}
 					}
+					unsigned char isFlagUp = IS_FLAG_UP((*iter).flag);
+					unsigned char isFlagGateway = IS_FLAG_GATEWAY((*iter).flag);
+				
+					int met=0; (*iter).metric.Format("%d", met);
+					m_sHeader.ip_ttl = met;
+					if( isFlagUp )
+					{
+						if( isFlagGateway )
+							sendPacketViaGivenAddress(TRUE, (unsigned char*) pFrame, (*device_iter).device_ip, (*iter).gateway_ip, pFrame->ip_dst, 120);
+						else
+							sendPacketViaGivenAddress(TRUE, (unsigned char*) pFrame, (*device_iter).device_ip, pFrame->ip_dst, pFrame->ip_dst, 120);
+						break;
+					}
 				}
+
 			}
 
-			bSuccess = mp_UnderLayer->Send((unsigned char*)pFrame, 100);
+			bSuccess = sendPacketViaGivenAddress(TRUE, (unsigned char*)ppayload, NULL, (*iter).gateway_ip, m_sHeader.ip_dst, 100);
 		}
 		else if(pFrame->ip_tos == 0x2)	//ping success
 		{
