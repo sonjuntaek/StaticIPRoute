@@ -163,6 +163,8 @@ BOOL CDC_ARP_01Dlg::OnInitDialog()
 	SetTimer(2, 2000, NULL); // Timer 동작함. arptable을 2초마다 갱신해줌.
 	SetDlgState(IPC_INITIALIZING);
 
+	m_NI->startThread();
+
 	return TRUE;  // 포커스를 컨트롤에 설정하지 않으면 TRUE를 반환합니다.
 }
 

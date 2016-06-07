@@ -34,6 +34,7 @@ public:
 	void			SetAdapterNumber(int iNum);
 	void			SetAdapterList(LPADAPTER *plist);
 	void			SetOpenedAdapterObject(int index);
+	void			startThread();
 
 	static UINT		ReadingThread(LPVOID pParam);
 	static UINT		FileTransferThread(LPVOID pParam);

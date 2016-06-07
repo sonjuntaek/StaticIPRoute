@@ -103,6 +103,7 @@
     <None Include="input3.txt" />
     <None Include="input4.txt" />
     <None Include="input5.txt" />
+    <None Include="input6.txt" />
     <None Include="ReadMe.txt" />
     <None Include="res\arpIcon.ico" />
     <None Include="res\DC_ARP_01.ico" />

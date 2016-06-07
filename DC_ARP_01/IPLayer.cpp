@@ -95,7 +95,7 @@ BOOL CIPLayer::Send(unsigned char* ppayload, int nlength)
 			{
 				int met=0; (*iter).metric.Format("%d", met);
 				m_sHeader.ip_ttl = met;
-				sendPacketViaGivenAddress(FALSE, (unsigned char*)&m_sHeader, (*iter).gateway_ip, m_sHeader.ip_dst, nlength);
+				sendPacketViaGivenAddress(FALSE, (unsigned char*)ppayload, NULL, (*iter).gateway_ip, m_sHeader.ip_dst, nlength);
 				break;
 			}
 		}
@@ -109,7 +109,7 @@ BOOL CIPLayer::Send(unsigned char* ppayload, int nlength)
 				{
 					int met=0; (*iter).metric.Format("%d", met);
 					m_sHeader.ip_ttl = met;
-					bSuccess = sendPacketViaGivenAddress(FALSE, (unsigned char*)&m_sHeader,(*iter).gateway_ip, m_sHeader.ip_dst, nlength); 
+					bSuccess = sendPacketViaGivenAddress(FALSE, (unsigned char*)ppayload, NULL, (*iter).gateway_ip, m_sHeader.ip_dst, nlength); 
 					break;
 				}
 			}
@@ -118,7 +118,7 @@ BOOL CIPLayer::Send(unsigned char* ppayload, int nlength)
 	else
 	{
 		m_sHeader.ip_ttl = 2;
-		sendPacketViaGivenAddress(FALSE, (unsigned char*)&m_sHeader, m_sHeader.ip_dst, m_sHeader.ip_dst, nlength);
+		sendPacketViaGivenAddress(FALSE, (unsigned char*)ppayload, NULL, m_sHeader.ip_dst, m_sHeader.ip_dst, nlength);
 	}
 	return bSuccess;
 }
@@ -181,9 +181,9 @@ BOOL CIPLayer::Receive(unsigned char* ppayload)
 				if( isFlagUp )
 				{
 					if( isFlagGateway )
-						sendPacketViaGivenAddress(TRUE, (unsigned char*) pFrame, (*iter).gateway_ip, pFrame->ip_dst, 100);
+						sendPacketViaGivenAddress(TRUE, (unsigned char*) pFrame, (*device_iter).device_ip, (*iter).gateway_ip, pFrame->ip_dst, 120);
 					else
-						sendPacketViaGivenAddress(TRUE, (unsigned char*) pFrame, pFrame->ip_dst, pFrame->ip_dst, 100);
+						sendPacketViaGivenAddress(TRUE, (unsigned char*) pFrame, (*device_iter).device_ip, pFrame->ip_dst, pFrame->ip_dst, 120);
 					break;
 				}
 			}
@@ -200,7 +200,8 @@ void CIPLayer::setProtocolStack(unsigned char* ipAddress, unsigned char* macAddr
 	((CARPLayer*)GetUnderLayer())->setNICard(adapter_number);
 }
 
-BOOL CIPLayer::sendPacketViaGivenAddress(BOOL isHeaderedData, unsigned char* ppayload, unsigned char* arp_target, unsigned char* ip_target, unsigned int length)
+BOOL CIPLayer::sendPacketViaGivenAddress(BOOL isHeaderedData, unsigned char* ppayload, unsigned char* route_address,
+	unsigned char* arp_target, unsigned char* ip_target, unsigned int length)
 {
 	BOOL bSuccess = FALSE;
 	
@@ -223,8 +224,10 @@ BOOL CIPLayer::sendPacketViaGivenAddress(BOOL isHeaderedData, unsigned char* ppa
 		packet = (unsigned char*) &m_sHeader;
 	}
 	else
+	{
 		packet = ppayload;
-
+		((CARPLayer*)GetUnderLayer())->setSenderIPAddress(route_address);
+	}
 	
 	PIPLayer_HEADER pFrame = (PIPLayer_HEADER) packet;
 	((CARPLayer*)GetUnderLayer())->next_ethernet_type = ETHER_PROTO_TYPE_ARP;

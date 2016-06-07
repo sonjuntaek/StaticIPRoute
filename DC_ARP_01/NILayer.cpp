@@ -55,6 +55,10 @@ void CNILayer::PacketStartDriver()
 	newNI.m_AdapterObject = pcap_open_live(m_pAdapterList[m_iNumAdapter]->name,1500,PCAP_OPENFLAG_PROMISCUOUS,2000,errbuf);
 	AfxBeginThread(ReadingThread, &newNI);
 	*/
+}
+
+void CNILayer::startThread()
+{
 	AfxBeginThread(ReadingThread, this);
 }
 
