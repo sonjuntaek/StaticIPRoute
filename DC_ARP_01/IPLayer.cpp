@@ -134,12 +134,32 @@ BOOL CIPLayer::Receive(unsigned char* ppayload)
 		if(pFrame->ip_tos == 0x1)	//ping received
 		{
 			bSuccess = mp_aUpperLayer[0]->Receive((unsigned char*)pFrame->ip_data);
-			pFrame->ip_tos = 0x2;
+
 			unsigned char temp[4];
 			memcpy(temp, pFrame->ip_dst, 4);
 			memcpy(pFrame->ip_dst, pFrame->ip_src, 4);
 			memcpy(pFrame->ip_src, temp, 4);
-			pFrame->ip_ttl = 4;
+			pFrame->ip_ttl = 28;
+			pFrame->ip_tos = 0x2;
+			list<STATIC_IP_ROUTING_RECORD>::iterator iter = routingTable.begin();
+			unsigned char maskedData[4];
+			for(; iter != routingTable.end(); iter++)
+			{
+				IPAddressMasking(maskedData, pFrame->ip_dst, (*iter).netmask_ip);
+				if(memcmp((*iter).destination_ip, maskedData, 4) == 0)
+				{
+					list<INTERFACE_STRUCT>::iterator device_iter = device_list.begin();
+					for(;device_iter != device_list.end(); device_iter++)
+					{
+						if((*device_iter).device_number == (*iter).device_number)
+						{
+							setProtocolStack((*device_iter).device_ip, (*device_iter).device_mac, (*device_iter).device_number);
+							break;
+						}
+					}
+				}
+			}
+
 			bSuccess = mp_UnderLayer->Send((unsigned char*)pFrame, 100);
 		}
 		else if(pFrame->ip_tos == 0x2)	//ping success
@@ -206,6 +226,7 @@ BOOL CIPLayer::sendPacketViaGivenAddress(BOOL isHeaderedData, unsigned char* ppa
 	BOOL bSuccess = FALSE;
 	
 	unsigned char* packet;
+	unsigned char* packet_reserv = (unsigned char*)malloc(length);
 	if(isHeaderedData == FALSE)
 	{
 		m_sHeader.ip_verlen = 0x49;
@@ -228,6 +249,8 @@ BOOL CIPLayer::sendPacketViaGivenAddress(BOOL isHeaderedData, unsigned char* ppa
 		packet = ppayload;
 		((CARPLayer*)GetUnderLayer())->setSenderIPAddress(route_address);
 	}
+
+	memcpy(packet_reserv, packet, length);
 	
 	PIPLayer_HEADER pFrame = (PIPLayer_HEADER) packet;
 	((CARPLayer*)GetUnderLayer())->next_ethernet_type = ETHER_PROTO_TYPE_ARP;
@@ -235,9 +258,6 @@ BOOL CIPLayer::sendPacketViaGivenAddress(BOOL isHeaderedData, unsigned char* ppa
 	//bSuccess = mp_UnderLayer->Send((unsigned char*)ppayload,sizeof(*ppayload));
 
 	bSuccess = mp_UnderLayer->Send((unsigned char*)packet, length);
-	
-	semaphore = 0;
-	while(semaphore == 0) Sleep(200);
 
 	if(bSuccess)	//ARP Request Success
 	{
@@ -247,7 +267,7 @@ BOOL CIPLayer::sendPacketViaGivenAddress(BOOL isHeaderedData, unsigned char* ppa
 		memcpy(targetMAC, ((CARPLayer*)GetUnderLayer())->getHardwareAddressByGivenIPAddress(arp_target), 6);
 		PIPLayer_HEADER pFrame = (PIPLayer_HEADER) packet;
 		((CARPLayer*)GetUnderLayer())->setTargetHardwareAddress(targetMAC);
-		bSuccess = mp_UnderLayer->Send((unsigned char*)packet, length);
+		bSuccess = mp_UnderLayer->Send((unsigned char*)packet_reserv, length);
 	}
 	return bSuccess;
 }
